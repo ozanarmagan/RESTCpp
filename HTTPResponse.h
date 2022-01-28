@@ -45,12 +45,15 @@ class HTTPResponse
         void fSetBody(const string& body) { mRequestBody = body; };
         void fSetBody(const vector<FormData*> form);
         void fSetBodyFile(const string& fileName);
+        void fSetHeaderOnly(bool val) { mHeaderOnly = val; };
         const HTTP_VERSION fGetHTTPVersion() const { return mRequestVersion; };
         const short fGetStatusCode() const { return mStatusCode; }; 
         const unordered_map<string,string> fGetHeaders() const { return mHeaders; };
         const string fGetBody() const { return mRequestBody; };
+        const bool fIsHeaderOnly() const { return mHeaderOnly; };
         const string fSerializeResponse() const;
     private:
+        bool mHeaderOnly = false;
         HTTP_VERSION mRequestVersion = {1, 1};
         short mStatusCode;
         unordered_map<string,string> mHeaders;

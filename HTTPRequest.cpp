@@ -99,6 +99,10 @@ HTTPRequest::HTTPRequest(const string& data)
         mMethod = METHOD::PATCH;
     else if(methodStr == "DELETE")
         mMethod = METHOD::DEL;
+    else if(methodStr == "HEAD")
+        mMethod = METHOD::HEAD;
+    else if(methodStr == "OPTIONS")
+        mMethod = METHOD::OPTIONS;
 
     cursor = data.find_first_of(" ",cursorPrev);
     mPath = data.substr(cursorPrev,cursor - cursorPrev);

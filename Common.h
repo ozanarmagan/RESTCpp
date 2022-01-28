@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 enum class METHOD {
-    GET,POST,PUT,PATCH,DEL,INVALID
+    GET,POST,PUT,PATCH,DEL,HEAD,OPTIONS,INVALID
 };
 
 

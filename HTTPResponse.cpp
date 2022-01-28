@@ -10,7 +10,7 @@ const string HTTPResponse::fSerializeResponse() const
         res += key + ": " + value + "\r\n";
     if(mRequestBody.length() > 0)
         res += "Content-Length: " + std::to_string(mRequestBody.length());
-    if(mRequestBody.length() > 0)
+    if(mRequestBody.length() > 0 && !mHeaderOnly)
     res += string("\r\n\r\n") +  mRequestBody;
     return res;
 }

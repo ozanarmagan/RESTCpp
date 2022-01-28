@@ -131,7 +131,41 @@ void HTTPServer::fOnRequest(uint64_t socket)
     timeStr = timeStr.substr(0, timeStr.find('\0'));
     res->fAddHeader("Date",timeStr);
     res->fAddHeader("Connection","Close");
+    if(req->fGetMethod() == METHOD::HEAD)
+        res->fSetHeaderOnly(true);
 
+    if(req->fGetMethod() == METHOD::OPTIONS)
+    {
+        res->fSetStatus(204);
+        if(mRouter == nullptr)
+            res->fAddHeader("Allow","HEAD, GET");
+        else
+        {
+            string allowedMethods = "HEAD";
+            auto pos1 = req->fGetPath().find_first_of("/");
+            auto pos2 = req->fGetPath().find_last_of("/");
+            string URLPath = req->fGetPath().substr(pos1, pos2 - pos1 + 1);
+            for(auto& obj : mRouter->mRoutes)
+            {
+                if(std::get<0>(obj) == URLPath)
+                {
+                    switch (std::get<1>(obj))
+                    {
+                        case METHOD::GET: allowedMethods += ", GET";break;
+                        case METHOD::POST: allowedMethods += ", POST";break;
+                        case METHOD::PUT: allowedMethods += ", PUT";break;
+                        case METHOD::PATCH: allowedMethods += ", PATCH";break;
+                        case METHOD::DEL: allowedMethods += ", DELETE";break;
+                        default:break;
+                    }
+                }
+            }
+            res->fAddHeader("Allow",allowedMethods);
+        }
+        delete req;
+        return *res;
+    }
+    
     if(mRouter != nullptr)
     {
         auto pos1 = req->fGetPath().find_first_of("/");
