@@ -16,6 +16,7 @@
 #include "Common.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
+#include "ThreadPool.h"
 
 using std::function;
 using std::unique_ptr;
@@ -36,12 +37,12 @@ class HTTPServer
         class Router
         {
             public:
-                void fAddRoute(const string& URLPath, const METHOD& method, const function<void(HTTPRequest&,HTTPResponse&)>& callBack) { mRoutes.push_back(std::make_tuple(URLPath, method, callBack)); };
+                void fAddRoute(const string& URLPath, const METHOD& method, const function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { mRoutes.push_back(std::make_tuple(URLPath, method, callBack)); };
                 void fAddStaticRoute(string URLPath, string folderPath) { mStaticRoutes[URLPath] = folderPath; };
                 friend class HTTPServer;
             private:
                 unordered_map<string,string> mStaticRoutes;
-                vector<std::tuple<string,METHOD,function<void(HTTPRequest&,HTTPResponse&)>>> mRoutes;
+                vector<std::tuple<string,METHOD,function<void(const HTTPRequest&,HTTPResponse&)>>> mRoutes;
         };
         void fConnectRouter(Router* router) { mRouter = router; };
     private:
@@ -53,7 +54,7 @@ class HTTPServer
         string mRawRequest;
         HTTPRequest* mCurrentRequest;
         Router* mRouter;
-        vector<unique_ptr<thread>> mClientThreads;
+        vector<thread> mClientThreads;
         void init();
         void fOnRequest(uint64_t socket);
         const string fRecieveNext(uint64_t socket);

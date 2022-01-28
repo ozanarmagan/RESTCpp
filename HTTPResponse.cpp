@@ -15,7 +15,7 @@ const string HTTPResponse::fSerializeResponse() const
     return res;
 }
 
-void HTTPResponse::fSetBody(const vector<FormData*> form)
+void HTTPResponse::fSetBodyFormData(const vector<FormData*> form)
 {
     string boundary = "BOUNDARY__" + gGenerateBoundary();
     mHeaders["Content-Type"] = " multipart/form-data; boundary=" + boundary;

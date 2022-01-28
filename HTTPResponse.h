@@ -42,9 +42,11 @@ class HTTPResponse
         void fSetHTTPVersion(const HTTP_VERSION& version) { mRequestVersion = version; };
         void fAddHeader(const string& key, const string& value) {  mHeaders[key] = value; };
         void fDeleteHeader(const string& key) { mHeaders.erase(key); };
-        void fSetBody(const string& body) { mRequestBody = body; };
-        void fSetBody(const vector<FormData*> form);
+        void fSetBodyText(const string& body) { mHeaders["Content-Type"] = "text/plain"; mRequestBody = body; };
+        void fSetBodyHTML(const string& serializedHTML) { mHeaders["Content-Type"] = "text/html"; mRequestBody = serializedHTML; };
+        void fSetBodyFormData(const vector<FormData*> form);
         void fSetBodyFile(const string& fileName);
+        void fSetBodyJSON(const string& serializedJSON) { mHeaders["Content-Type"] = "application/json"; mRequestBody = serializedJSON; };
         void fSetHeaderOnly(bool val) { mHeaderOnly = val; };
         const HTTP_VERSION fGetHTTPVersion() const { return mRequestVersion; };
         const short fGetStatusCode() const { return mStatusCode; }; 
