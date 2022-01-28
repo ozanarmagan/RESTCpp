@@ -7,12 +7,23 @@
 #endif
 
 #include <functional>
+#include <thread>
+#include <ctime>
+#include <fstream>
+#include <string>
+#include <tuple>
 
 #include "Common.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
 
 using std::function;
+using std::unique_ptr;
+using std::thread;
+using std::time;
+using std::ctime;
+using std::ifstream;
+using std::stringstream;
 
 class HTTPServer
 {
@@ -25,20 +36,27 @@ class HTTPServer
         class Router
         {
             public:
+                void fAddRoute(const string& URLPath, const METHOD& method, const function<void(HTTPRequest&,HTTPResponse&)>& callBack) { mRoutes.push_back(std::make_tuple(URLPath, method, callBack)); };
+                void fAddStaticRoute(string URLPath, string folderPath) { mStaticRoutes[URLPath] = folderPath; };
+                friend class HTTPServer;
             private:
-                vector<std::tuple<string,METHOD,function<void(HTTPRequest&,HTTPResponse&)>>> routes;
+                unordered_map<string,string> mStaticRoutes;
+                vector<std::tuple<string,METHOD,function<void(HTTPRequest&,HTTPResponse&)>>> mRoutes;
         };
+        void fConnectRouter(Router* router) { mRouter = router; };
     private:
         uint64_t mSock,mAcceptSocket;
         struct sockaddr_in mServerAddr,mClientAddr;
-        bool mLog;
-        unordered_map<string,string> staticRoutes; 
+        bool mLog; 
         uint16_t mPort;
         char* mBuffer;
         string mRawRequest;
         HTTPRequest* mCurrentRequest;
+        Router* mRouter;
+        vector<unique_ptr<thread>> mClientThreads;
         void init();
-        void fRecieveNext();
-        void fProcessRequest();
-        void fSendResponse();
+        void fOnRequest(uint64_t socket);
+        const string fRecieveNext(uint64_t socket);
+        const HTTPResponse fProcessRequest(const string& rawData);
+        void fSendResponse(const HTTPResponse& response,const uint64_t socket);
 };

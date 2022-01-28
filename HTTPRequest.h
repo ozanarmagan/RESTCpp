@@ -19,15 +19,16 @@ class HTTPRequest
         HTTPRequest(const string& data);
         ~HTTPRequest() { for( auto d : mFormData) { delete d; } delete mRawBodyData; };
         const METHOD fGetMethod() const { return mMethod; };
-        const HTTP_PROTOCOL fGetProtocol() const { return mProtocol; };
-        const time_t fGetRequestTime() const { return mTime; };
-        const string fGetUserAgent() const { return mHeaders.at("User-Agent"); };
-        const string fGetHostName() const { return mHeaders.at("Host"); };
+        const HTTP_VERSION fGetHTTPVersion() const { return mRequestVersion; };
+        const time_t& fGetRequestTime() const { return mTime; };
+        const string& fGetUserAgent() const { return mHeaders.at("User-Agent"); };
+        const string& fGetHostName() const { return mHeaders.at("Host"); };
+        const string& fGetPath() const { return mPath; };
         const unordered_map<string,string> fGetHeaders() const { return mHeaders; };
         const unordered_map<string,string> fGetQueries() const { return mQueries; };
     private:
         METHOD mMethod;
-        HTTP_PROTOCOL mProtocol;
+        HTTP_VERSION mRequestVersion;
         time_t mTime;
         string mPath;
         size_t contentLength;

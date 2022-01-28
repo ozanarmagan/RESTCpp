@@ -7,15 +7,96 @@ enum class METHOD {
     GET,POST,PUT,PATCH,DEL,INVALID
 };
 
+
+typedef struct {
+    short majorVersion,minorVersion;
+} HTTP_VERSION;
+
+
+
 enum class HTTP_PROTOCOL {
     HTTP1_0,HTTP1_1,HTTP2_0,HTTP3_0,INVALID
 };
 
 
+inline std::string gGetStatusDescription(short statusCode)
+{
+    std::string res;
+    switch(statusCode)
+    {
+        case 100:	res = "Continue";break;
+        case 101:	res = "Switching protocols";break;
+        case 102:	res = "Processing";break;
+        case 103:	res = "Early Hints	 ";break;
+        case 200:	res = "OK";break;
+        case 201:	res = "Created";break;
+        case 202:	res = "Accepted";break;
+        case 203:   res = "Non-Authoritative Information";break;
+        case 204:	res = "No Content";break;
+        case 205:	res = "Reset Content";break;
+        case 206:	res = "Partial Content";break;
+        case 207:	res = "Multi-Status";break;
+        case 208:	res = "Already Reported";break;
+        case 226:	res = "IM Used";break;
+        case 300:	res = "Multiple Choices";break;
+        case 301:	res = "Moved Permanently";break;
+        case 302:	res = "Found";break;
+        case 303:	res = "See Other";break;
+        case 304:	res = "Not Modified";break;
+        case 305:	res = "Use Proxy";break;
+        case 306:	res = "Switch Proxy";break;
+        case 307:	res = "Temporary Redirect";break;
+        case 308:	res = "Permanent Redirect	 	 ";break;
+        case 400:	res = "Bad Request";break;
+        case 401:	res = "Unauthorized";break;
+        case 402:	res = "Payment Required";break;
+        case 403:	res = "Forbidden";break;
+        case 404:	res = "Not Found";break;
+        case 405:	res = "Method Not Allowed";break;
+        case 406:	res = "Not Acceptable";break;
+        case 407:	res = "Proxy Authentication Required";break;
+        case 408:	res = "Request Timeout";break;
+        case 409:	res = "Conflict";break;
+        case 410:	res = "Gone";break;
+        case 411:	res = "Length Required";break;
+        case 412:	res = "Precondition Failed";break;
+        case 413:	res = "Payload Too Large";break;
+        case 414:	res = "URI Too Long";break;
+        case 415:	res = "Unsupported Media Type";break;
+        case 416:	res = "Range Not Satisfiable";break;
+        case 417:	res = "Expectation Failed";break;
+        case 418:	res = "I'm a Teapot";break;
+        case 421:	res = "Misdirected Request";break;
+        case 422:	res = "Unprocessable Entity";break;
+        case 423:	res = "Locked";break;
+        case 424:	res = "Failed Dependency";break;
+        case 425:	res = "Too Early";break;
+        case 426:	res = "Upgrade Required";break;
+        case 428:	res = "Precondition Required";break;
+        case 429:	res = "Too Many Requests";break;
+        case 431:	res = "Request Header Fields Too Large";break;
+        case 451:	res = "Unavailable For Legal Reasons";break;
+        case 500:	res = "Internal Server Error";break;
+        case 501:	res = "Not Implemented";break;
+        case 502:	res = "Bad Gateway";break;
+        case 503:	res = "Service Unavailable";break;
+        case 504:	res = "Gateway Timeout";break;
+        case 505:	res = "HTTP Version Not Supported";break;
+        case 506:	res = "Variant Also Negotiates";break;
+        case 507:	res = "Insufficient Storage";break;
+        case 508:	res = "Loop Detected";break;
+        case 510:	res = "Not Extended";break;
+        case 511:	res = "Network Authentication Required";break;
+    }
+
+    return res;
+}
+
+
 
 typedef unsigned char byte;
 
-const static unordered_map<std::string,std::string> gMIMETable = {
+const static std::unordered_map<std::string,std::string> gMIMETable = {
     {"3dm", "x-world/x-3dmf"},
     {"3dmf","x-world/x-3dmf"},
     {"a","application/octet-stream"},

@@ -106,7 +106,7 @@ HTTPRequest::HTTPRequest(const string& data)
     if(mPath.find('?') != string::npos)
     {
         string queryStr = mPath.substr(mPath.find("?") + 1);
-        mPath = mPath.substr(0,mPath.find("?") - 1);
+        mPath = mPath.substr(0,mPath.find("?"));
         char *buffer = new char[queryStr.length()];
         decodeUri(buffer,queryStr.c_str());
         queryStr = string(buffer);
@@ -123,17 +123,15 @@ HTTPRequest::HTTPRequest(const string& data)
     }
 
     cursorPrev = cursor + 1;
-    auto protocolStr = vec[0].substr(cursorPrev,vec[0].length() - cursorPrev - 1);   
-    if(protocolStr == "HTTP/1.0")
-        mProtocol = HTTP_PROTOCOL::HTTP1_0;
-    else if(protocolStr == "HTTP/1.1")
-        mProtocol = HTTP_PROTOCOL::HTTP1_1;
-    else if(protocolStr == "HTTP/2")
-        mProtocol = HTTP_PROTOCOL::HTTP2_0;
-    else if(protocolStr == "HTTP/3")
-        mProtocol = HTTP_PROTOCOL::HTTP3_0;
-    else
-        mProtocol = HTTP_PROTOCOL::INVALID;
+    auto protocolStr = vec[0].substr(cursorPrev,vec[0].length() - cursorPrev);   
+    if(protocolStr.find("HTTP/") != string::npos)
+    {
+        auto pos = protocolStr.find("HTTP/") + 5;
+        short majorV = protocolStr.substr(pos, protocolStr.find(".",pos) - pos)[0] - 48;
+        auto pos2 = protocolStr.find(".",pos);
+        short minorV = protocolStr.substr(pos2 + 1)[0] - 48;
+        mRequestVersion = {majorV, minorV};
+    }
 
 
     int i = 1;
