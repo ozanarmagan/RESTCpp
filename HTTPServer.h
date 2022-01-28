@@ -10,6 +10,7 @@
 
 #include "Common.h"
 #include "HTTPRequest.h"
+#include "HTTPResponse.h"
 
 using std::function;
 
@@ -25,7 +26,7 @@ class HTTPServer
         {
             public:
             private:
-                vector<std::tuple<string,METHOD,function<void(HTTPRequest&,HTTPResponse&)>> routes;
+                vector<std::tuple<string,METHOD,function<void(HTTPRequest&,HTTPResponse&)>>> routes;
         };
     private:
         uint64_t mSock,mAcceptSocket;

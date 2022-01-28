@@ -14,6 +14,7 @@ class FormData
         const string fGetFileName() const { return mFileName; };
         const string fGetName() const { return mName; };
         const string fGetTextData() const { return mTextData; };
+        const string fGetContentType() const { return mContentType; };
         const byte* fGetBinaryData() const { return mBinaryData; };
         const size_t fGetBinaryDataLength() const { return mBinaryDataLength; };
         const bool fIsBinary() const { return mIsBinary; };

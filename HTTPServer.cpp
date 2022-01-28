@@ -91,7 +91,7 @@ void HTTPServer::fRecieveNext()
 
 void HTTPServer::fRun()
 {
-    RUN_FOREVER
+    while(1)
     {
         int size = sizeof(mClientAddr);
 #ifdef _WIN32
