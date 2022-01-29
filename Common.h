@@ -2,6 +2,9 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <stdexcept>
+
+using std::runtime_error;
 
 enum class METHOD {
     GET,POST,PUT,PATCH,DEL,HEAD,OPTIONS,INVALID

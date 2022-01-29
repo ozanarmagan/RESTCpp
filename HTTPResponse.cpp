@@ -3,15 +3,22 @@
 const string HTTPResponse::fSerializeResponse() const 
 {
     string res = "";
-    string statusDesc = gGetStatusDescription(mStatusCode);
-    res += string("HTTP/") + std::to_string(mRequestVersion.majorVersion) + string(".") + std::to_string(mRequestVersion.minorVersion) + " ";
-    res += to_string(mStatusCode) + " " + statusDesc + "\r\n";
-    for(auto& [key,value] : mHeaders)
-        res += key + ": " + value + "\r\n";
-    if(mRequestBody.length() > 0)
-        res += "Content-Length: " + std::to_string(mRequestBody.length());
-    if(mRequestBody.length() > 0 && !mHeaderOnly)
-    res += string("\r\n\r\n") +  mRequestBody;
+    try
+    {
+        string statusDesc = gGetStatusDescription(mStatusCode);
+        res += string("HTTP/") + std::to_string(mRequestVersion.majorVersion) + string(".") + std::to_string(mRequestVersion.minorVersion) + " ";
+        res += to_string(mStatusCode) + " " + statusDesc + "\r\n";
+        for(auto& [key,value] : mHeaders)
+            res += key + ": " + value + "\r\n";
+        if(mRequestBody.length() > 0)
+            res += "Content-Length: " + std::to_string(mRequestBody.length());
+        if(mRequestBody.length() > 0 && !mHeaderOnly)
+        res += string("\r\n\r\n") +  mRequestBody;
+    }
+    catch (runtime_error ex)
+    {
+        std::cout << ex.what() << "\nError while serializing response";
+    }
     return res;
 }
 
@@ -47,16 +54,23 @@ void HTTPResponse::fSetBodyFormData(const vector<FormData*> form)
 
 void HTTPResponse::fSetBodyFile(const string& fileName)
 {
-    auto MIME = gMIMETable.at(fileName.substr(fileName.find_last_of('.') + 1));
-    mHeaders["Content-Type"] = " " + MIME;
-    std::ifstream file(fileName);
-
-    if(file.good())
+    try
     {
-        stringstream stream;
-        stream << file.rdbuf();
-        mRequestBody = stream.str();
+        auto MIME = gMIMETable.at(fileName.substr(fileName.find_last_of('.') + 1));
+        mHeaders["Content-Type"] = " " + MIME;
+        std::ifstream file(fileName);
+
+        if(file.good())
+        {
+            stringstream stream;
+            stream << file.rdbuf();
+            mRequestBody = stream.str();
+        }
+        
+        file.close();
     }
-    
-    file.close();
+    catch (runtime_error ex)
+    {
+        std::cout << ex.what() << "\nError while set file to body\n" << fileName; 
+    }
 }
