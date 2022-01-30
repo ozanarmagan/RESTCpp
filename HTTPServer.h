@@ -10,6 +10,7 @@
     #include <fcntl.h>
     #include <unistd.h>
     #include <cerrno>
+    #include <poll.h>
 #endif
 
 #include <functional>
@@ -38,8 +39,7 @@ using std::memset;
 class HTTPServer
 {
     public:
-        HTTPServer(uint16_t port = 8080) : mPort(port) { init(); mBuffer = new char[8192]; };
-        ~HTTPServer() { delete [] mBuffer; };
+        HTTPServer(uint16_t port = 8080) : mPort(port) { init(); };
         void fRun();
         void fStop();
         void fSetLogging(bool value) { mLog = value; };
@@ -48,6 +48,8 @@ class HTTPServer
             public:
                 void fAddRoute(const string& URLPath, const METHOD& method, const function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { mRoutes.push_back(std::make_tuple(URLPath, method, callBack)); };
                 void fAddStaticRoute(string URLPath, string folderPath) { mStaticRoutes[URLPath] = folderPath; };
+                const unordered_map<string,string>& fGetStaticRoutes() const { return mStaticRoutes; };
+                const vector<std::tuple<string,METHOD,function<void(const HTTPRequest&,HTTPResponse&)>>>& fGetDefinedRoutes() const { return mRoutes; }; 
                 friend class HTTPServer;
             private:
                 unordered_map<string,string> mStaticRoutes;
@@ -59,14 +61,11 @@ class HTTPServer
         struct sockaddr_in mServerAddr,mClientAddr;
         bool mLog; 
         uint16_t mPort;
-        char* mBuffer;
-        string mRawRequest;
-        HTTPRequest* mCurrentRequest;
         Router* mRouter;
         vector<thread> mClientThreads;
         void init();
         void fOnRequest(uint64_t socket);
         const string fRecieveNext(uint64_t socket);
         std::shared_ptr<HTTPResponse> fProcessRequest(const string& rawData);
-        void fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t socket);
+        void fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t& sock);
 };

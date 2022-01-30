@@ -1,6 +1,156 @@
 #include "HTTPServer.h"
 
 
+namespace
+{   
+    void hSetMainHeaders(std::shared_ptr<HTTPResponse> res)
+    {
+        res->fSetStatus(200);
+        res->fAddHeader("Server","RESTC++");
+        time_t currTime;
+        time(&currTime);
+        string timeStr = ctime(&currTime);
+        std::replace(timeStr.begin(),timeStr.end(),'\n','\0');
+        timeStr = timeStr.substr(0, timeStr.find('\0'));
+        res->fAddHeader("Date",timeStr);
+        res->fAddHeader("Connection","Close");
+    }
+
+    void hSetOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,HTTPServer::Router* router)
+    {
+        res->fSetStatus(204);
+        if(router == nullptr)
+        {
+            res->fAddHeader("Allow","HEAD");
+            return;
+        }
+        string allowedMethods = "HEAD";
+        auto pos1 = req->fGetPath().find_first_of("/");
+        auto pos2 = req->fGetPath().find_last_of("/");
+        string URLPath = req->fGetPath().substr(pos1, pos2 - pos1 + 1);
+        if(router->fGetStaticRoutes().find(URLPath) != router->fGetStaticRoutes().end())
+        {
+            res->fAddHeader("Allow","HEAD, GET");
+            return;
+        }
+        for(auto& obj : router->fGetDefinedRoutes())
+            if(std::get<0>(obj) == URLPath)
+                switch (std::get<1>(obj))
+                {
+                    case METHOD::GET: allowedMethods += ", GET";break;
+                    case METHOD::POST: allowedMethods += ", POST";break;
+                    case METHOD::PUT: allowedMethods += ", PUT";break;
+                    case METHOD::PATCH: allowedMethods += ", PATCH";break;
+                    case METHOD::DEL: allowedMethods += ", DELETE";break;
+                    default:break;
+                }
+        res->fAddHeader("Allow",allowedMethods);
+    }
+
+    bool hSearchStaticRoutes(std::shared_ptr<HTTPResponse> res, string path,string fileName,HTTPServer::Router* router)
+    {
+        bool hasFoundPath = false;
+        bool hasFoundFile = false;
+        for(auto& [key,value] : router->fGetStaticRoutes())
+        {
+            if(path == key)
+            {
+                ifstream file(value + fileName);
+                bool checkFile = file.is_open();
+                file.close();
+                if(checkFile && fileName != "")
+                {
+                    res->fSetBodyFile(value + fileName);
+                    hasFoundFile = true;
+                    break;
+                }
+                hasFoundPath = true;
+            }
+        }
+        if(hasFoundPath && !hasFoundFile)
+        {
+            res->fSetStatus(404);
+            res->fSetBodyHTML("<html><h2>404</h2><br/>File Could Not Found<br/><h6>RESTC++</html>");
+        }
+        return hasFoundPath;
+    }
+
+    bool hSearchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const string& path,const HTTPServer::Router* router)
+    {
+        for(const auto& route : router->fGetDefinedRoutes())
+        {
+            if(std::get<0>(route) == path && std::get<1>(route) == req->fGetMethod())
+            {
+                std::get<2>(route)(*(req.get()), *(res.get()));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void hProcessRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, HTTPServer::Router* router)
+    {
+        auto fullPath = req->fGetPath();
+        auto pos1 = fullPath.find_first_of("/");
+        auto pos2 = fullPath.find_last_of("/");
+        string URLPath = fullPath.substr(pos1, pos2 - pos1 + 1);
+        string fileName = fullPath.substr(pos2 + 1);
+
+        if(hSearchStaticRoutes(res, URLPath, fileName,router))
+            return;
+
+        if(!hSearchDefinedRoutes(req, res, URLPath + fileName, router))
+        {
+            res->fSetStatus(404);
+            res->fSetBodyHTML("<html>Invalid request to " + URLPath + "<br/><h6>RESTC++</html>");
+        }
+    }
+
+    void hCloseSocket(const uint64_t& sock)
+    {
+#ifdef _WIN32
+        if(shutdown(sock, SD_BOTH) == SOCKET_ERROR)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+            std::cout << WSAGetLastError() << std::endl;
+        };
+        if(closesocket(sock) == SOCKET_ERROR)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+            std::cout << WSAGetLastError() << std::endl;
+        };
+#else
+        if(shutdown(sock, SHUT_RDWR) < 0)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+        };
+        if(close(sock) < 0)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+        };
+#endif
+    }
+
+    void hSendToSocket(const uint64_t& sock,const string& message)
+    {
+        size_t sent = 0,totalSent = 0;
+        const char* buffer = message.c_str();
+
+        while(totalSent < message.length())
+        {
+            if((sent = send(sock, buffer + totalSent, message.length() - totalSent,0)) < 0)
+            {
+                std::cout << "Error while sending response" << std::endl;
+            }
+
+            totalSent += sent;
+        }
+    }
+}
+
+
+
+
 void HTTPServer::init()
 {
 
@@ -180,101 +330,25 @@ std::shared_ptr<HTTPResponse> HTTPServer::fProcessRequest(const string& rawData)
 
     auto res = std::make_shared<HTTPResponse>();
     try
-    {   
+    {
+        hSetMainHeaders(res);
         if(rawData == "HTTPFAIL")
         {
             res->fSetStatus(408);
-            res->fAddHeader("Server","RESTC++");
             return res;
         }
         auto req = std::make_shared<HTTPRequest>(rawData);
-        res->fSetHTTPVersion(req->fGetHTTPVersion());
-        res->fSetStatus(200);
-        res->fAddHeader("Server","RESTC++");
-        time_t currTime;
-        time(&currTime);
-        string timeStr = ctime(&currTime);
-        std::replace(timeStr.begin(),timeStr.end(),'\n','\0');
-        timeStr = timeStr.substr(0, timeStr.find('\0'));
-        res->fAddHeader("Date",timeStr);
-        res->fAddHeader("Connection","Close");
         if(req->fGetMethod() == METHOD::HEAD)
             res->fSetHeaderOnly(true);
-
+        res->fSetHTTPVersion(req->fGetHTTPVersion());
         if(req->fGetMethod() == METHOD::OPTIONS)
         {
-            res->fSetStatus(204);
-            if(mRouter == nullptr)
-                res->fAddHeader("Allow","HEAD, GET");
-            else
-            {
-                string allowedMethods = "HEAD";
-                auto pos1 = req->fGetPath().find_first_of("/");
-                auto pos2 = req->fGetPath().find_last_of("/");
-                string URLPath = req->fGetPath().substr(pos1, pos2 - pos1 + 1);
-                for(auto& obj : mRouter->mRoutes)
-                {
-                    if(std::get<0>(obj) == URLPath)
-                    {
-                        switch (std::get<1>(obj))
-                        {
-                            case METHOD::GET: allowedMethods += ", GET";break;
-                            case METHOD::POST: allowedMethods += ", POST";break;
-                            case METHOD::PUT: allowedMethods += ", PUT";break;
-                            case METHOD::PATCH: allowedMethods += ", PATCH";break;
-                            case METHOD::DEL: allowedMethods += ", DELETE";break;
-                            default:break;
-                        }
-                    }
-                }
-                res->fAddHeader("Allow",allowedMethods);
-            }
+            hSetOptions(req,res,mRouter);
             return res;
         }
         
         if(mRouter != nullptr)
-        {
-            auto pos1 = req->fGetPath().find_first_of("/");
-            auto pos2 = req->fGetPath().find_last_of("/");
-            string URLPath = req->fGetPath().substr(pos1, pos2 - pos1 + 1);
-            string fileName = req->fGetPath().substr(pos2 + 1);
-            bool foundStatic = false;
-            for(auto& [key,value] : mRouter->mStaticRoutes)
-            {
-                if(URLPath == key)
-                {
-                    foundStatic = true;
-                    
-                    ifstream file(value + fileName);
-                    bool checkFile = file.is_open();
-                    file.close();
-                    if(checkFile && fileName != "")
-                        res->fSetBodyFile(value + fileName);
-                    else
-                    {
-                        res->fSetStatus(404);
-                        res->fSetBodyHTML("<html><h2>404</h2><br/>File Could Not Found<br/><h6>RESTC++</html>");
-                    }
-                    break;
-                }
-            }
-
-            if(foundStatic)
-            {
-                return res;
-            }
-
-            for(auto& route : mRouter->mRoutes)
-            {
-                if(std::get<0>(route) == (URLPath + fileName) && std::get<1>(route) == req->fGetMethod())
-                {
-                    std::get<2>(route)(*req,*res);
-                    break;
-                }
-            }
-        }
-
-        return res;
+            hProcessRouter(req,res,mRouter);
     }
     catch (runtime_error ex)
     {
@@ -284,47 +358,13 @@ std::shared_ptr<HTTPResponse> HTTPServer::fProcessRequest(const string& rawData)
 }
 
 
-void HTTPServer::fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t socket)
+void HTTPServer::fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t& sock)
 {
     try
     {
-        string resStr = response->fSerializeResponse();
-        size_t sent = 0,totalSent = 0;
-        char* buffer = &(resStr[0]);
+        hSendToSocket(sock,response->fSerializeResponse());
 
-        while(totalSent < resStr.length())
-        {
-            if((sent = send(socket, buffer, resStr.length() - totalSent,0)) < 0)
-            {
-                std::cout << "Error while sending response" << std::endl;
-            }
-
-            
-            buffer += sent;
-            totalSent += sent;
-        }
-
-#ifdef _WIN32
-        if(shutdown(socket, SD_BOTH) == SOCKET_ERROR)
-        {
-            std::cout << "Error while closing socket" << std::endl;
-            std::cout << WSAGetLastError() << std::endl;
-        };
-        if(closesocket(socket) == SOCKET_ERROR)
-        {
-            std::cout << "Error while closing socket" << std::endl;
-            std::cout << WSAGetLastError() << std::endl;
-        };
-#else
-        if(shutdown(socket, SHUT_RDWR) < 0)
-        {
-            std::cout << "Error while closing socket" << std::endl;
-        };
-        if(close(socket) < 0)
-        {
-            std::cout << "Error while closing socket" << std::endl;
-        };
-#endif
+        hCloseSocket(sock);
     }
     catch (runtime_error ex)
     {
