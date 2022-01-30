@@ -36,6 +36,8 @@ namespace restcpp
             case METHOD::HEAD:      return "HEAD";
             case METHOD::OPTIONS:   return "OPTIONS";
         }
+
+        return "";
     }
 
 

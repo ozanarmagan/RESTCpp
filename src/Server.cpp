@@ -1,4 +1,4 @@
-#include "HTTPServer.h"
+#include "../include/Server.h"
 
 namespace restcpp
 {
@@ -17,7 +17,7 @@ namespace restcpp
             res->fAddHeader("Connection","Close");
         }
 
-        void hSetOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,HTTPServer::Router* router)
+        void hSetOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Server::Router* router)
         {
             res->fSetStatus(204);
             if(router == nullptr)
@@ -48,7 +48,7 @@ namespace restcpp
             res->fAddHeader("Allow",allowedMethods);
         }
 
-        bool hSearchStaticRoutes(std::shared_ptr<HTTPResponse> res, string path,string fileName,HTTPServer::Router* router)
+        bool hSearchStaticRoutes(std::shared_ptr<HTTPResponse> res, string path,string fileName,Server::Router* router)
         {
             bool hasFoundPath = false;
             bool hasFoundFile = false;
@@ -77,7 +77,7 @@ namespace restcpp
             return hasFoundPath;
         }
 
-        bool hSearchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const string& path,const HTTPServer::Router* router)
+        bool hSearchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const string& path,const Server::Router* router)
         {
             for(const auto& route : router->fGetDefinedRoutes())
             {
@@ -90,7 +90,7 @@ namespace restcpp
             return false;
         }
 
-        void hProcessRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, HTTPServer::Router* router)
+        void hProcessRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, Server::Router* router)
         {
             auto fullPath = req->fGetPath();
             auto pos1 = fullPath.find_first_of("/");
@@ -110,7 +110,7 @@ namespace restcpp
 
         void hCloseSocket(const uint64_t& sock)
         {
-    #ifdef _WIN32
+#ifdef _WIN32
             if(shutdown(sock, SD_BOTH) == SOCKET_ERROR)
             {
                 std::cout << "Error while closing socket" << std::endl;
@@ -121,7 +121,7 @@ namespace restcpp
                 std::cout << "Error while closing socket" << std::endl;
                 std::cout << WSAGetLastError() << std::endl;
             };
-    #else
+#else
             if(shutdown(sock, SHUT_RDWR) < 0)
             {
                 std::cout << "Error while closing socket" << std::endl;
@@ -130,7 +130,7 @@ namespace restcpp
             {
                 std::cout << "Error while closing socket" << std::endl;
             };
-    #endif
+#endif
         }
 
         void hSendToSocket(const uint64_t& sock,const string& message)
@@ -153,37 +153,33 @@ namespace restcpp
 
 
 
-    void HTTPServer::init()
+    void Server::init()
     {
 
-    #ifdef _WIN32
+#ifdef _WIN32
         WSADATA wsaData;
         WSAStartup(0x202,&wsaData);
 
         if((mSock = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) == INVALID_SOCKET)
-    #else
+#else
         if((mSock = socket(AF_INET,SOCK_STREAM,0)) < 0)
-    #endif
+#endif
         {
             std::cout << "Error while initilazing socket\n";
         }
-
-    #ifdef _WIN32
-        unsigned long o = 1;
-        ioctlsocket(mSock, FIONBIO, &o);
-    #else
+#ifndef _WIN32
         fcntl(mAcceptSocket, F_SETFL,O_NONBLOCK);
-    #endif
+#endif
         int op = 1;
         setsockopt(mSock, SOL_SOCKET, SO_REUSEADDR, (char*)&op, sizeof(op));
 
         mServerAddr.sin_family = AF_INET;
         mServerAddr.sin_port = htons(mPort);
-    #ifdef _WIN32
+#ifdef _WIN32
         mServerAddr.sin_addr.S_un.S_addr = INADDR_ANY;
-    #else
+#else
         mServerAddr.sin_addr.s_addr = INADDR_ANY;
-    #endif
+#endif
 
 
         if(bind(mSock, (struct sockaddr*) &mServerAddr, sizeof(mServerAddr)) < 0)
@@ -199,7 +195,7 @@ namespace restcpp
     }
 
 
-    const string HTTPServer::fRecieveNext(uint64_t socket)
+    const string Server::fRecieveNext(uint64_t socket)
     {
         string rawData;
         char buffer[8192];
@@ -211,16 +207,16 @@ namespace restcpp
             int contentLength = 0;
             while(1)
             {
-    #ifdef _WIN32
+#ifdef _WIN32
                 if((recieveLength = recv(socket,buffer,8192, 0)) == SOCKET_ERROR)
-    #else
+#else
                 if((recieveLength = recv(socket,buffer,8192, 0)) < 0)
-    #endif
+#endif
                 {
                     //std::cout << "Error while receiving data from socket\n";
-        #ifdef _WIN32
+#ifdef _WIN32
                     //std::cout << WSAGetLastError() << std::endl;
-        #endif
+#endif
                     return "HTTPFAIL";
                 }
 
@@ -264,41 +260,42 @@ namespace restcpp
     }
 
 
-    void HTTPServer::fRun()
+    void Server::fRun()
     {
         ThreadPool tPool(8);
         while(1)
         {
             socklen_t size = sizeof(mClientAddr);
-    #ifdef _WIN32
+#ifdef _WIN32
             if((mAcceptSocket = accept(mSock,0,0)) == INVALID_SOCKET)
-    #else
+#else
             if((mAcceptSocket = accept(mSock,0,0)) < 0)
-    #endif
+#endif
             {
                 //std::cout << "Error while initilazing accept socket\n";
+                auto val = WSAGetLastError();
+                if(val != 10035)
+                    std::cout << val << std::endl;
                 continue;
             }
         
-    #ifdef _WIN32
-            int timeout = 2000;
-            setsockopt(mAcceptSocket, SOL_SOCKET, SO_RCVTIMEO,(const char*)&timeout,sizeof(timeout));
-    #else
+#ifdef _WIN32
+#else
             struct timeval timeout;
             timeout.tv_sec = 5;
             timeout.tv_usec = 0;
             setsockopt(mAcceptSocket, SOL_SOCKET, SO_RCVTIMEO,&timeout,sizeof(timeout));
-    #endif
+#endif
 
             //fOnRequest(mAcceptSocket);
-            auto res = tPool.fEnqueue(std::bind(&HTTPServer::fOnRequest,this,mAcceptSocket));
+            auto res = tPool.fEnqueue(std::bind(&Server::fOnRequest,this,mAcceptSocket));
         }
 
         hCloseSocket(mSock);
     }
 
 
-    void HTTPServer::fOnRequest(uint64_t socket)
+    void Server::fOnRequest(uint64_t socket)
     {
         const string reqData = fRecieveNext(mAcceptSocket);
         if(reqData == "")
@@ -307,7 +304,7 @@ namespace restcpp
         fSendResponse(res,socket);
     }
 
-    std::shared_ptr<HTTPResponse> HTTPServer::fProcessRequest(const string& rawData)
+    std::shared_ptr<HTTPResponse> Server::fProcessRequest(const string& rawData)
     {   
 
         auto res = std::make_shared<HTTPResponse>();
@@ -340,7 +337,7 @@ namespace restcpp
     }
 
 
-    void HTTPServer::fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t& sock)
+    void Server::fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t& sock)
     {
         try
         {

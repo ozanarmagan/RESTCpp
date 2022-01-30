@@ -1,4 +1,4 @@
-#include "HTTPRequest.h"
+#include "../include/HTTPRequest.h"
 
 namespace restcpp
 {

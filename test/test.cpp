@@ -1,12 +1,26 @@
-#include "HTTPServer.h"
+#include "../include/Server.h"
 
+
+void sendQueries(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
+{
+    std::string resp = "{";
+    for(auto& [key,val] : req.fGetQueries())
+    {
+        resp += key + ":\"" + val + "\",";
+    }
+    if(resp.length() > 1)
+        resp[resp.length() - 1] = '}';
+    else
+        resp += "}";
+    res.fSetBodyJSON(resp);
+}
 
 
 int main()
 {
     
-    restcpp::HTTPServer server(6005);
-    restcpp::HTTPServer::Router router;
+    restcpp::Server server;
+    restcpp::Server::Router router;
     router.fAddStaticRoute("/","./WWW_ROOT/");
 
     router.fAddRoute("/myname/", restcpp::METHOD::GET, [] (const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res) {
@@ -18,6 +32,8 @@ int main()
             surname = query.at("surname");
         res.fSetBodyText("{name:" + ((name!= "") ? ( "\"" +  name + "\"") : "null") + ",surname:" + ((surname != "") ? ( "\"" + surname +  "\"") : "null") + "}");
     });
+
+    router.fAddRoute("/querytest/", restcpp::METHOD::GET, sendQueries);
 
     server.fConnectRouter(&router);
     server.fRun();

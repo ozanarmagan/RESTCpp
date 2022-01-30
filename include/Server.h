@@ -38,10 +38,10 @@ namespace restcpp
     using std::memcpy;
     using std::memset;
 
-    class HTTPServer
+    class Server
     {
         public:
-            HTTPServer(uint16_t port = 8080) : mPort(port) { init(); };
+            Server(uint16_t port = 8080) : mPort(port) { init(); };
             void fRun();
             void fStop();
             void fSetLogging(bool value) { mLog = value; };
