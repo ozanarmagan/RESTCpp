@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <ctime>
 #include <vector>
+#include <cstring>
 #include <string>
 #include <unordered_map>
+#include <memory>
 #include "Common.h"
 #include "FormData.h"
 
@@ -12,12 +14,13 @@ using std::string;
 using std::vector;
 using std::unordered_map;
 using std::replace;
+using std::memcpy;
 
 class HTTPRequest
 {
     public:
         HTTPRequest(const string& data);
-        ~HTTPRequest() { for( auto d : mFormData) { delete d; } delete mRawBodyData; };
+        ~HTTPRequest() { for( auto d : mFormData) { delete d; }  };
         const METHOD fGetMethod() const { return mMethod; };
         const HTTP_VERSION fGetHTTPVersion() const { return mRequestVersion; };
         const time_t& fGetRequestTime() const { return mTime; };

@@ -36,8 +36,9 @@ namespace {
         return splittedStrings;
     }
 
-    int decodeUri(char* out, const char* in) 
+    string decodeUri(const char* in) 
     {
+        string res;
         static const char tbl[256] = {
             -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
             -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
@@ -56,22 +57,20 @@ namespace {
             -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
             -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1
         };
-        char c, v1, v2, *beg=out;
+        char c, v1, v2;
         if(in != NULL) {
             while((c=*in++) != '\0') {
                 if(c == '%') {
                     if((v1=tbl[(unsigned char)*in++])<0 || 
                     (v2=tbl[(unsigned char)*in++])<0) {
-                        *beg = '\0';
-                        return -1;
+                        return res;
                     }
                     c = (v1<<4)|v2;
                 }
-                *out++ = c;
+                res += c;
             }
         }
-        *out = '\0';
-        return 0;
+        return res;
     }
 }
 
@@ -112,10 +111,8 @@ HTTPRequest::HTTPRequest(const string& data)
         {
             string queryStr = mPath.substr(mPath.find("?") + 1);
             mPath = mPath.substr(0,mPath.find("?"));
-            char *buffer = new char[queryStr.length()];
-            decodeUri(buffer,queryStr.c_str());
-            queryStr = string(buffer);
-            delete [] buffer;
+            
+            queryStr = decodeUri(queryStr.c_str());
             vector<string> queries = splitByChar(queryStr,'&');
 
             for(auto& query : queries)
@@ -205,10 +202,7 @@ HTTPRequest::HTTPRequest(const string& data)
             else if(mHeaders["Content-Type"].find("application/x-www-form-urlencoded") != string::npos)
             {
                 string body = data.substr(data.find("\r\n\r\n") + 4);
-                char *buffer = new char[body.length()];
-                decodeUri(buffer,body.c_str());
-                body = string(buffer);
-                delete [] buffer;
+                body = decodeUri(body.c_str());
                 vector<string> objects = splitByChar(body,'&');
                 for(auto& object : objects)
                 {
@@ -222,8 +216,8 @@ HTTPRequest::HTTPRequest(const string& data)
             else
             {
                 string body = data.substr(data.find("\r\n\r\n") + 4);
-                mRawBodyData = new byte[body.length()];
-                memcpy(mRawBodyData, body.c_str(), sizeof(byte) * body.length());
+                auto mRawBodyData =  std::make_unique<byte>(body.length());
+                memcpy(mRawBodyData.get(), body.c_str(), sizeof(byte) * body.length());
             }
         }
     }

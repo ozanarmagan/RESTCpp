@@ -16,12 +16,21 @@ void HTTPServer::init()
         std::cout << "Error while initilazing socket\n";
     }
 
+#ifdef _WIN32
+    unsigned long o = 1;
+    ioctlsocket(mSock, FIONBIO, &o);
+#else
+    fcntl(mAcceptSocket, F_SETFL,O_NONBLOCK);
+#endif
+    int op = 1;
+    setsockopt(mSock, SOL_SOCKET, SO_REUSEADDR, (char*)&op, sizeof(op));
+
     mServerAddr.sin_family = AF_INET;
     mServerAddr.sin_port = htons(mPort);
 #ifdef _WIN32
     mServerAddr.sin_addr.S_un.S_addr = INADDR_ANY;
 #else
-    mServerAddr.sin_addr.S_addr = INADDR_ANY;
+    mServerAddr.sin_addr.s_addr = INADDR_ANY;
 #endif
 
 
@@ -41,6 +50,8 @@ void HTTPServer::init()
 const string HTTPServer::fRecieveNext(uint64_t socket)
 {
     string rawData;
+    char buffer[8192];
+    uint8_t attempts = 0;
     try
     {
         int64_t recieveLength = 0,totalRecieved = 0; 
@@ -48,23 +59,26 @@ const string HTTPServer::fRecieveNext(uint64_t socket)
         int contentLength = 0;
         while(1)
         {
-            memset(mBuffer,'\0',8192);
-
-            if((recieveLength = recv(socket,mBuffer,8192, 0)) == SOCKET_ERROR)
+#ifdef _WIN32
+            if((recieveLength = recv(socket,buffer,8192, 0)) == SOCKET_ERROR)
+#else
+            if((recieveLength = recv(socket,buffer,8192, 0)) < 0)
+#endif
             {
                 //std::cout << "Error while receiving data from socket\n";
     #ifdef _WIN32
                 //std::cout << WSAGetLastError() << std::endl;
     #endif
-                continue;
+                return "HTTPFAIL";
             }
+
 
 
             if(recieveLength == 0)
                 break;
             
             totalRecieved += recieveLength; 
-            rawData += string(mBuffer,recieveLength);
+            rawData += string(buffer,recieveLength);
 
             if(totalRecieved > 32)
             {
@@ -88,53 +102,92 @@ const string HTTPServer::fRecieveNext(uint64_t socket)
                 }
             }
         }
-
-        return rawData;
     }
     catch (runtime_error ex)
     {
         std::cout << ex.what() << "\n Exception on recieve";
     }
+    
     return rawData;
 }
 
 
 void HTTPServer::fRun()
 {
-    ThreadPool* tPool = new ThreadPool(5);
+    ThreadPool tPool(8);
     while(1)
     {
-        int size = sizeof(mClientAddr);
+        socklen_t size = sizeof(mClientAddr);
 #ifdef _WIN32
-        if((mAcceptSocket = accept(mSock,(struct sockaddr*) &mClientAddr,&size)) == INVALID_SOCKET)
+        if((mAcceptSocket = accept(mSock,0,0)) == INVALID_SOCKET)
 #else
-        if((mAcceptSocket = accept(mSock,(struct sockaddr*) &mClientAddr,&size))) < 0)
+        if((mAcceptSocket = accept(mSock,0,0)) < 0)
 #endif
         {
             //std::cout << "Error while initilazing accept socket\n";
             continue;
         }
     
-        std::cout << "Socket Sent " << mAcceptSocket << std::endl;
-        auto res = tPool->enqueue([&] { this->fOnRequest(mAcceptSocket); });
+#ifdef _WIN32
+        int timeout = 2000;
+        setsockopt(mAcceptSocket, SOL_SOCKET, SO_RCVTIMEO,(const char*)&timeout,sizeof(timeout));
+#else
+        struct timeval timeout;
+        timeout.tv_sec = 5;
+        timeout.tv_usec = 0;
+        setsockopt(mAcceptSocket, SOL_SOCKET, SO_RCVTIMEO,&timeout,sizeof(timeout));
+#endif
+
+        //fOnRequest(mAcceptSocket);
+        auto res = tPool.fEnqueue(std::bind(&HTTPServer::fOnRequest,this,mAcceptSocket));
     }
+
+#ifdef _WIN32
+        if(shutdown(mSock, SD_BOTH) == SOCKET_ERROR)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+            std::cout << WSAGetLastError() << std::endl;
+        };
+        if(closesocket(mSock) == SOCKET_ERROR)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+            std::cout << WSAGetLastError() << std::endl;
+        };
+#else
+        if(shutdown(mSock, SHUT_RDWR) < 0)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+        };
+        if(close(mSock) < 0)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+        };
+#endif
 }
 
 
 void HTTPServer::fOnRequest(uint64_t socket)
 {
     const string reqData = fRecieveNext(mAcceptSocket);
-    const HTTPResponse res = fProcessRequest(reqData);
+    if(reqData == "")
+        return;
+    auto res = fProcessRequest(reqData);
     fSendResponse(res,socket);
-    std::cout << "Done";
 }
 
- const HTTPResponse HTTPServer::fProcessRequest(const string& rawData)
+std::shared_ptr<HTTPResponse> HTTPServer::fProcessRequest(const string& rawData)
 {   
-    HTTPResponse* res = new HTTPResponse();
+
+    auto res = std::make_shared<HTTPResponse>();
     try
-    {
-        HTTPRequest* req = new HTTPRequest(rawData);
+    {   
+        if(rawData == "HTTPFAIL")
+        {
+            res->fSetStatus(408);
+            res->fAddHeader("Server","RESTC++");
+            return res;
+        }
+        auto req = std::make_shared<HTTPRequest>(rawData);
         res->fSetHTTPVersion(req->fGetHTTPVersion());
         res->fSetStatus(200);
         res->fAddHeader("Server","RESTC++");
@@ -176,8 +229,7 @@ void HTTPServer::fOnRequest(uint64_t socket)
                 }
                 res->fAddHeader("Allow",allowedMethods);
             }
-            delete req;
-            return *res;
+            return res;
         }
         
         if(mRouter != nullptr)
@@ -194,14 +246,14 @@ void HTTPServer::fOnRequest(uint64_t socket)
                     foundStatic = true;
                     
                     ifstream file(value + fileName);
-                    bool checkFile = file.good();
+                    bool checkFile = file.is_open();
                     file.close();
-                    if(file.good())
+                    if(checkFile && fileName != "")
                         res->fSetBodyFile(value + fileName);
                     else
                     {
                         res->fSetStatus(404);
-                        res->fSetBodyHTML("<html><h3>404</h3><br/>File Could Not Found</html>");
+                        res->fSetBodyHTML("<html><h2>404</h2><br/>File Could Not Found<br/><h6>RESTC++</html>");
                     }
                     break;
                 }
@@ -209,8 +261,7 @@ void HTTPServer::fOnRequest(uint64_t socket)
 
             if(foundStatic)
             {
-                delete req;
-                return *res;
+                return res;
             }
 
             for(auto& route : mRouter->mRoutes)
@@ -223,22 +274,21 @@ void HTTPServer::fOnRequest(uint64_t socket)
             }
         }
 
-        delete req;
-        return *res;
+        return res;
     }
     catch (runtime_error ex)
     {
         std::cout << ex.what() << "\n Exception on proccess request";
     }
-    return *res;
+    return res;
 }
 
 
-void HTTPServer::fSendResponse(const HTTPResponse& response,const uint64_t socket)
+void HTTPServer::fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t socket)
 {
     try
     {
-        string resStr = response.fSerializeResponse();
+        string resStr = response->fSerializeResponse();
         size_t sent = 0,totalSent = 0;
         char* buffer = &(resStr[0]);
 
@@ -254,7 +304,6 @@ void HTTPServer::fSendResponse(const HTTPResponse& response,const uint64_t socke
             totalSent += sent;
         }
 
-        delete &response;
 #ifdef _WIN32
         if(shutdown(socket, SD_BOTH) == SOCKET_ERROR)
         {

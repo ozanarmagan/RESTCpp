@@ -5,6 +5,11 @@
     #include <ws2tcpip.h>
 #else
     #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <netinet/ip.h>
+    #include <fcntl.h>
+    #include <unistd.h>
+    #include <cerrno>
 #endif
 
 #include <functional>
@@ -13,6 +18,7 @@
 #include <fstream>
 #include <string>
 #include <tuple>
+#include <cstring>
 
 #include "Common.h"
 #include "HTTPRequest.h"
@@ -26,6 +32,8 @@ using std::time;
 using std::ctime;
 using std::ifstream;
 using std::stringstream;
+using std::memcpy;
+using std::memset;
 
 class HTTPServer
 {
@@ -59,6 +67,6 @@ class HTTPServer
         void init();
         void fOnRequest(uint64_t socket);
         const string fRecieveNext(uint64_t socket);
-        const HTTPResponse fProcessRequest(const string& rawData);
-        void fSendResponse(const HTTPResponse& response,const uint64_t socket);
+        std::shared_ptr<HTTPResponse> fProcessRequest(const string& rawData);
+        void fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t socket);
 };
