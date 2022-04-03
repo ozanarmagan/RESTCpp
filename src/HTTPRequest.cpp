@@ -83,7 +83,7 @@ namespace restcpp
         {
             int cursor = 0,cursorPrev = 0;
 
-            mTime = std::time(nullptr);
+            m_time = std::time(nullptr);
 
             vector<string> vec = splitByChar(data,'\r');
 
@@ -92,27 +92,27 @@ namespace restcpp
             auto methodStr = vec[0].substr(0, cursor);
             cursorPrev = cursor + 1;
             if(methodStr == "GET")
-                mMethod = METHOD::GET;
+                m_method = METHOD::GET;
             else if(methodStr == "POST")
-                mMethod = METHOD::POST;
+                m_method = METHOD::POST;
             else if(methodStr == "PUT")
-                mMethod = METHOD::PUT;
+                m_method = METHOD::PUT;
             else if(methodStr == "PATCH")
-                mMethod = METHOD::PATCH;
+                m_method = METHOD::PATCH;
             else if(methodStr == "DELETE")
-                mMethod = METHOD::DEL;
+                m_method = METHOD::DEL;
             else if(methodStr == "HEAD")
-                mMethod = METHOD::HEAD;
+                m_method = METHOD::HEAD;
             else if(methodStr == "OPTIONS")
-                mMethod = METHOD::OPTIONS;
+                m_method = METHOD::OPTIONS;
 
             cursor = data.find_first_of(" ",cursorPrev);
-            mPath = data.substr(cursorPrev,cursor - cursorPrev);
+            m_path = data.substr(cursorPrev,cursor - cursorPrev);
 
-            if(mPath.find('?') != string::npos)
+            if(m_path.find('?') != string::npos)
             {
-                string queryStr = mPath.substr(mPath.find("?") + 1);
-                mPath = mPath.substr(0,mPath.find("?"));
+                string queryStr = m_path.substr(m_path.find("?") + 1);
+                m_path = m_path.substr(0,m_path.find("?"));
                 
                 queryStr = decodeUri(queryStr.c_str());
                 vector<string> queries = splitByChar(queryStr,'&');
@@ -122,7 +122,7 @@ namespace restcpp
                     auto pos = query.find("=");
                     auto key = query.substr(0,pos);
                     auto val = query.substr(pos + 1, query.length() - pos - 1);
-                    mQueries[key] = val;
+                    m_queries[key] = val;
                 }
             }
 
@@ -134,7 +134,7 @@ namespace restcpp
                 short majorV = protocolStr.substr(pos, protocolStr.find(".",pos) - pos)[0] - 48;
                 auto pos2 = protocolStr.find(".",pos);
                 short minorV = protocolStr.substr(pos2 + 1)[0] - 48;
-                mRequestVersion = {majorV, minorV};
+                m_requestVersion = {majorV, minorV};
             }
 
 
@@ -148,15 +148,15 @@ namespace restcpp
                 {
                     auto key = vec[i].substr(1,pos - 1);
                     auto val = vec[i].substr(pos + 1, vec[i].length() - pos - 1);
-                    mHeaders[key] = val;
+                    m_headers[key] = val;
                 }
             }
 
-            if(mHeaders["Content-Length"] != "")
+            if(m_headers["Content-Length"] != "")
             {
-                if(mHeaders["Content-Type"].find("multipart/form-data") != string::npos)
+                if(m_headers["Content-Type"].find("multipart/form-data") != string::npos)
                 {
-                    string contentType = mHeaders["Content-Type"];
+                    string contentType = m_headers["Content-Type"];
                     string boundary = contentType.substr(contentType.find("boundary=") + 9);
                     string body = data.substr(data.find("--" + boundary));
                     vector<string> form = splitByStr(body,"--" + boundary);
@@ -189,19 +189,19 @@ namespace restcpp
                         data = obj.substr(obj.find("\r\n\r\n") + 4);
 
                         if(!isBinary)
-                            mFormData.push_back(new FormData(name, fileName, data, contentType));
+                            m_formData.push_back(FormData(name, fileName, data, contentType));
                         else
                         {
-                            byte* byteArray = new byte[data.length()];
-                            memcpy(byteArray, data.c_str(), sizeof(byte) * data.length());
-                            mFormData.push_back(new FormData(name, fileName, byteArray, contentType));
+                            std::shared_ptr<byte> byteArray = std::make_shared<byte>(data.length()); 
+                            memcpy(byteArray.get(), data.c_str(), sizeof(byte) * data.length());
+                            m_formData.push_back(FormData(name, fileName, byteArray, contentType));
                         }
 
                         
                     }
                 }
 
-                else if(mHeaders["Content-Type"].find("application/x-www-form-urlencoded") != string::npos)
+                else if(m_headers["Content-Type"].find("application/x-www-form-urlencoded") != string::npos)
                 {
                     string body = data.substr(data.find("\r\n\r\n") + 4);
                     body = decodeUri(body.c_str());
@@ -211,17 +211,21 @@ namespace restcpp
                         auto pos = object.find("=");
                         auto key = object.substr(0,pos);
                         auto val = object.substr(pos + 1, object.length() - pos - 1);
-                        mFormData.push_back(new FormData(key, "", val));
+                        m_formData.push_back(FormData(key, "", val));
                     }
                 }
 
                 else
                 {
                     string body = data.substr(data.find("\r\n\r\n") + 4);
-                    auto mRawBodyData =  std::make_unique<byte>(body.length());
-                    memcpy(mRawBodyData.get(), body.c_str(), sizeof(byte) * body.length());
+                    auto m_rawBodyData =  std::make_unique<byte>(body.length());
+                    memcpy(m_rawBodyData.get(), body.c_str(), sizeof(byte) * body.length());
                 }
             }
+
+            
+
+
         }
         catch (runtime_error ex)
         {

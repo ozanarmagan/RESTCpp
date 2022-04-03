@@ -1,40 +1,23 @@
 #include "../include/Server.h"
+#include "dbConnection.h"
+#include "routes.h"
+#include "../include/Proxy.h"
 
 
-void sendQueries(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
-{
-    std::string resp = "{";
-    for(auto& [key,val] : req.fGetQueries())
-    {
-        resp += key + ":\"" + val + "\",";
-    }
-    if(resp.length() > 1)
-        resp[resp.length() - 1] = '}';
-    else
-        resp += "}";
-    res.fSetBodyJSON(resp);
-}
 
 
 int main()
 {
     
-    restcpp::Server server;
-    restcpp::Server::Router router;
-    router.fAddStaticRoute("/","./WWW_ROOT/");
 
-    router.fAddRoute("/myname/", restcpp::METHOD::GET, [] (const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res) {
-        std::string name,surname;
-        auto query = req.fGetQueries();
-        if(query.find("name") != query.end())
-            name = query.at("name");
-        if(query.find("surname") != query.end())
-            surname = query.at("surname");
-        res.fSetBodyText("{name:" + ((name!= "") ? ( "\"" +  name + "\"") : "null") + ",surname:" + ((surname != "") ? ( "\"" + surname +  "\"") : "null") + "}");
-    });
 
-    router.fAddRoute("/querytest/", restcpp::METHOD::GET, sendQueries);
+    restcpp::Server server(6005);
+    server.addStaticRoute("/","./WWW_ROOT/");
 
-    server.fConnectRouter(&router);
-    server.fRun();
+    server.addRoute("/products/", restcpp::METHOD::GET, getProducts);
+    server.addRoute("/greeting/{name}/{surname}", restcpp::METHOD::GET, testParams);
+    std::thread t1(&restcpp::Server::run,&server);
+    restcpp::Proxy("46.31.79.30:6005/products/");
+    t1.join();
+
 }

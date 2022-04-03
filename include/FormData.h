@@ -1,6 +1,9 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
+
+
 #include "Common.h"
 
 namespace restcpp
@@ -10,24 +13,23 @@ namespace restcpp
     class FormData
     {
         public:
-            FormData(string name, string fileName, string textData, string contentType = "") : mFileName(fileName),mName(name),mTextData(textData),mContentType(contentType) { mIsBinary = false; };
-            FormData(string name, string fileName, byte* binaryData, string contentType = "") : mFileName(fileName),mName(name),mBinaryData(binaryData),mContentType(contentType) { mIsBinary = true; };
-            ~FormData() { delete [] mBinaryData; };
-            const string fGetFileName() const { return mFileName; };
-            const string fGetName() const { return mName; };
-            const string fGetTextData() const { return mTextData; };
-            const string fGetContentType() const { return mContentType; };
-            const byte* fGetBinaryData() const { return mBinaryData; };
-            const size_t fGetBinaryDataLength() const { return mBinaryDataLength; };
-            const bool fIsBinary() const { return mIsBinary; };
+            FormData(string name, string fileName, string textData, string contentType = "") : m_fileName(fileName),m_name(name),m_textData(textData),m_contentType(contentType) { m_isBinary = false; };
+            FormData(string name, string fileName, std::shared_ptr<byte> binaryData, string contentType = "") : m_fileName(fileName),m_name(name),m_binaryData(binaryData),m_contentType(contentType) { m_isBinary = true; };
+            const string getFileName() const { return m_fileName; };
+            const string getName() const { return m_name; };
+            const string getTextData() const { return m_textData; };
+            const string getContentType() const { return m_contentType; };
+            const byte* getBinaryData() const { return m_binaryData.get(); };
+            const size_t getBinaryDataLength() const { return m_binaryDataLength; };
+            const bool isBinary() const { return m_isBinary; };
             string serialize(bool isMultiPart = true);
         private:
-            string mFileName;
-            string mName;
-            string mTextData;
-            string mContentType;
-            bool mIsBinary;
-            byte* mBinaryData;
-            size_t mBinaryDataLength;
+            string m_fileName;
+            string m_name;
+            string m_textData;
+            string m_contentType;
+            bool m_isBinary;
+            std::shared_ptr<byte> m_binaryData;
+            size_t m_binaryDataLength;
     };
 }

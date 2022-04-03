@@ -19,54 +19,54 @@ using std::future;
 class ThreadPool
 {
     public:
-        ThreadPool(int n) { mThreads.resize(n); for(int i = 0;i < n;i++) mThreads[i] = thread(PoolWorker(this)); }
+        ThreadPool(int n) { m_threads.resize(n); for(int i = 0;i < n;i++) m_threads[i] = thread(PoolWorker(this)); }
         template <typename T,typename... Args>
-        auto fEnqueue(T f,Args&&... args)
+        auto enqueue(T f,Args&&... args)
         {
             using funcType = decltype(f(args...))();
             function<funcType> func = std::bind<void>(std::forward<T>(f), std::forward<Args>(args)...);
             auto taskPtr = std::make_shared<std::packaged_task<funcType>>(func);
-            if(!mShutDown)
+            if(!m_shutDown)
             {
-                std::unique_lock<mutex> lock(mMutex);
-                mJobs.emplace([taskPtr]() {(*taskPtr)(); });
-                mCondition.notify_one();
+                std::unique_lock<mutex> lock(m_mutex);
+                m_jobs.emplace([taskPtr]() {(*taskPtr)(); });
+                m_condition.notify_one();
             }
             return taskPtr->get_future();
         }
-        void fShutDown() { mShutDown = true;}
+        void shutDown() { m_shutDown = true;}
     private:
         class PoolWorker
         {
             public:
-                PoolWorker(ThreadPool* pool) : mPool(pool) {    }
+                PoolWorker(ThreadPool* pool) : m_pool(pool) {    }
                 void operator()() 
                 {
                     
-                    while(!mPool->mShutDown)
+                    while(!m_pool->m_shutDown)
                     {
                         function<void()> f;
                         {
-                            std::unique_lock<mutex> lock(mPool->mMutex);
-                            if(mPool->mJobs.empty())
+                            std::unique_lock<mutex> lock(m_pool->m_mutex);
+                            if(m_pool->m_jobs.empty())
                             {
-                                if(mPool->mShutDown)
+                                if(m_pool->m_shutDown)
                                     break;
-                                mPool->mCondition.wait(lock);
+                                m_pool->m_condition.wait(lock);
                             }
-                            f = std::move(mPool->mJobs.front());
-                            mPool->mJobs.pop();
+                            f = std::move(m_pool->m_jobs.front());
+                            m_pool->m_jobs.pop();
                         }
                         f();
                     }
                 }
             private:
-                ThreadPool* mPool;
+                ThreadPool* m_pool;
         };
         friend class PoolWorker;
-        bool mShutDown = false;
-        mutex mMutex;
-        condition_variable mCondition;
-        vector<thread> mThreads;
-        queue<function<void()>> mJobs;
+        bool m_shutDown = false;
+        mutex m_mutex;
+        condition_variable m_condition;
+        vector<thread> m_threads;
+        queue<function<void()>> m_jobs;
 };

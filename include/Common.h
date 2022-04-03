@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <stdexcept>
+#include <vector>
 
 namespace restcpp
 {
@@ -23,6 +24,8 @@ namespace restcpp
         HTTP1_0,HTTP1_1,HTTP2_0,HTTP3_0,INVALID
     };
 
+    typedef uint64_t SOCKET;
+
 
     inline std::string gMethodToStr(const METHOD& method)
     {
@@ -39,6 +42,83 @@ namespace restcpp
 
         return "";
     }
+
+
+        inline std::vector<std::string> g_splitByChar(std::string to_split, char delimiter) {
+            std::vector<std::string> tokens;
+            std::string token;
+
+            for (const auto& c: to_split) 
+            {
+                if (c != delimiter)
+                    token += c;
+                else 
+                {
+                    if (token.length()) 
+                        tokens.push_back(token);
+                    token.clear();
+                }
+            }
+
+            if (token.length()) 
+                tokens.push_back(token);
+            return tokens;
+        }
+
+        inline std::vector<std::string> g_splitByStr(std::string str,std::string delimeter)
+        {
+            std::vector<std::string> splittedStrings = {};
+            size_t pos = 0;
+
+            while ((pos = str.find(delimeter)) != std::string::npos)
+            {
+                std::string token = str.substr(0, pos);
+                if (token.length() > 0)
+                    splittedStrings.push_back(token);
+                str.erase(0, pos + delimeter.length());
+            }
+
+            if (str.length() > 0)
+                splittedStrings.push_back(str);
+            return splittedStrings;
+        }
+
+        inline std::string g_decodeUri(const char* in) 
+        {
+            std::string res;
+            static const char tbl[256] = {
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                0, 1, 2, 3, 4, 5, 6, 7,  8, 9,-1,-1,-1,-1,-1,-1,
+                -1,10,11,12,13,14,15,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,10,11,12,13,14,15,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+                -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1
+            };
+            char c, v1, v2;
+            if(in != NULL) {
+                while((c=*in++) != '\0') {
+                    if(c == '%') {
+                        if((v1=tbl[(unsigned char)*in++])<0 || 
+                        (v2=tbl[(unsigned char)*in++])<0) {
+                            return res;
+                        }
+                        c = (v1<<4)|v2;
+                    }
+                    res += c;
+                }
+            }
+            return res;
+        }
 
 
     inline std::string gGetStatusDescription(short statusCode)

@@ -2,153 +2,181 @@
 
 namespace restcpp
 {
-    namespace
-    {   
-        void hSetMainHeaders(std::shared_ptr<HTTPResponse> res)
-        {
-            res->fSetStatus(200);
-            res->fAddHeader("Server","RESTC++");
-            time_t currTime;
-            time(&currTime);
-            string timeStr = ctime(&currTime);
-            std::replace(timeStr.begin(),timeStr.end(),'\n','\0');
-            timeStr = timeStr.substr(0, timeStr.find('\0'));
-            res->fAddHeader("Date",timeStr);
-            res->fAddHeader("Connection","Close");
-        }
 
-        void hSetOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Server::Router* router)
-        {
-            res->fSetStatus(204);
-            if(router == nullptr)
-            {
-                res->fAddHeader("Allow","HEAD");
-                return;
-            }
-            string allowedMethods = "HEAD";
-            auto pos1 = req->fGetPath().find_first_of("/");
-            auto pos2 = req->fGetPath().find_last_of("/");
-            string URLPath = req->fGetPath().substr(pos1, pos2 - pos1 + 1);
-            if(router->fGetStaticRoutes().find(URLPath) != router->fGetStaticRoutes().end())
-            {
-                res->fAddHeader("Allow","HEAD, GET");
-                return;
-            }
-            for(auto& obj : router->fGetDefinedRoutes())
-                if(std::get<0>(obj) == URLPath)
-                    switch (std::get<1>(obj))
-                    {
-                        case METHOD::GET: allowedMethods += ", GET";break;
-                        case METHOD::POST: allowedMethods += ", POST";break;
-                        case METHOD::PUT: allowedMethods += ", PUT";break;
-                        case METHOD::PATCH: allowedMethods += ", PATCH";break;
-                        case METHOD::DEL: allowedMethods += ", DELETE";break;
-                        default:break;
-                    }
-            res->fAddHeader("Allow",allowedMethods);
-        }
+    void Server::h_setMainHeaders(std::shared_ptr<HTTPResponse> res)
+    {
+        res->setStatus(200);
+        res->addHeader("Server","RESTC++");
+        time_t currTime;
+        time(&currTime);
+        string timeStr = ctime(&currTime);
+        std::replace(timeStr.begin(),timeStr.end(),'\n','\0');
+        timeStr = timeStr.substr(0, timeStr.find('\0'));
+        res->addHeader("Date",timeStr);
+        res->addHeader("Connection","Close");
+    }
 
-        bool hSearchStaticRoutes(std::shared_ptr<HTTPResponse> res, string path,string fileName,Server::Router* router)
+    void Server::h_setOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Router& router)
+    {
+        res->setStatus(204);
+        string allowedMethods = "HEAD";
+        auto pos1 = req->getPath().find_first_of("/");
+        auto pos2 = req->getPath().find_last_of("/");
+        string URLPath = req->getPath().substr(pos1, pos2 - pos1 + 1);
+        if(router.getStaticRoutes().find(URLPath) != router.getStaticRoutes().end())
         {
-            bool hasFoundPath = false;
-            bool hasFoundFile = false;
-            for(auto& [key,value] : router->fGetStaticRoutes())
-            {
-                if(path == key)
+            res->addHeader("Allow","HEAD, GET");
+            return;
+        }
+        for(auto& obj : router.getDefinedRoutes())
+            if(obj.m_URLPath == URLPath)
+                switch (obj.m_method)
                 {
-                    ifstream file(value + fileName);
-                    bool checkFile = file.is_open();
-                    file.close();
-                    if(checkFile && fileName != "")
-                    {
-                        res->fSetBodyFile(value + fileName);
-                        hasFoundFile = true;
-                        hasFoundPath = true;
-                        break;
-                    }
-                    hasFoundPath = true;
+                    case METHOD::GET: allowedMethods += ", GET";break;
+                    case METHOD::POST: allowedMethods += ", POST";break;
+                    case METHOD::PUT: allowedMethods += ", PUT";break;
+                    case METHOD::PATCH: allowedMethods += ", PATCH";break;
+                    case METHOD::DEL: allowedMethods += ", DELETE";break;
+                    default:break;
                 }
-            }
-            if(hasFoundPath && !hasFoundFile)
-            {
-                res->fSetStatus(404);
-                res->fSetBodyHTML("<html><pre>404 File Could Not Found</pre><br/><h6>RESTC++</html>");
-            }
-            return hasFoundPath;
-        }
+        res->addHeader("Allow",allowedMethods);
+    }
 
-        bool hSearchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const string& path,const Server::Router* router)
+    bool Server::h_searchStaticRoutes(std::shared_ptr<HTTPResponse> res, string path,string fileName,Router& router)
+    {
+        bool hasFoundPath = false;
+        bool hasFoundFile = false;
+        for(auto& [key,value] : router.getStaticRoutes())
         {
-            for(const auto& route : router->fGetDefinedRoutes())
+            if(path == key)
             {
-                if(std::get<0>(route) == path && std::get<1>(route) == req->fGetMethod())
+                ifstream file(value + fileName);
+                bool checkFile = file.is_open();
+                file.close();
+                if(checkFile && fileName != "")
                 {
-                    std::get<2>(route)(*(req.get()), *(res.get()));
+                    res->setBodyFile(value + fileName);
+                    hasFoundFile = true;
+                    hasFoundPath = true;
+                    break;
+                }
+                hasFoundPath = true;
+            }
+        }
+        if(hasFoundPath && !hasFoundFile)
+        {
+            res->setStatus(404);
+            res->setBodyHTML("<html><pre>404 File Could Not Found</pre><br/><h6>RESTC++</html>");
+        }
+        return hasFoundPath;
+    }
+
+    bool Server::h_searchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const string& path,const Router& router)
+    {
+        for(const auto& route : router.getDefinedRoutes())
+        {
+            if(route.m_pathParams.size() == 0)
+            {
+                if(route.m_URLPath == path && route.m_method == req->getMethod())
+                {
+                    route.m_callBack(*(req.get()), *(res.get()));
                     return true;
                 }
             }
-            return false;
-        }
-
-        void hProcessRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, Server::Router* router)
-        {
-            auto fullPath = req->fGetPath();
-            auto pos1 = fullPath.find_first_of("/");
-            auto pos2 = fullPath.find_last_of("/");
-            string URLPath = fullPath.substr(pos1, pos2 - pos1 + 1);
-            string fileName = fullPath.substr(pos2 + 1);
-
-            if(hSearchStaticRoutes(res, URLPath, fileName,router))
-                return;
-
-            if(!hSearchDefinedRoutes(req, res, URLPath + fileName, router))
+            else if(route.m_method == req->getMethod())
             {
-                res->fSetStatus(404);
-                res->fSetBodyHTML("<html><pre>Invalid "+ gMethodToStr(req->fGetMethod())  + " request to " + URLPath + "</pre><br/><h6>RESTC++</html>");
-            }
-        }
-
-        void hCloseSocket(const uint64_t& sock)
-        {
-#ifdef _WIN32
-            if(shutdown(sock, SD_BOTH) == SOCKET_ERROR)
-            {
-                std::cout << "Error while closing socket" << std::endl;
-                std::cout << WSAGetLastError() << std::endl;
-            };
-            if(closesocket(sock) == SOCKET_ERROR)
-            {
-                std::cout << "Error while closing socket" << std::endl;
-                std::cout << WSAGetLastError() << std::endl;
-            };
-#else
-            if(shutdown(sock, SHUT_RDWR) < 0)
-            {
-                std::cout << "Error while closing socket" << std::endl;
-            };
-            if(close(sock) < 0)
-            {
-                std::cout << "Error while closing socket" << std::endl;
-            };
-#endif
-        }
-
-        void hSendToSocket(const uint64_t& sock,const string& message)
-        {
-            size_t sent = 0,totalSent = 0;
-            const char* buffer = message.c_str();
-
-            while(totalSent < message.length())
-            {
-                if((sent = send(sock, buffer + totalSent, message.length() - totalSent,0)) < 0)
+                
+                if(path.find(route.m_pathParams[0].m_path) == string::npos)
+                    continue;
+                auto pathC = path;
+                
+                for(auto param : route.m_pathParams)
                 {
-                    std::cout << "Error while sending response" << std::endl;
+                    auto startPos = pathC.find(param.m_path);
+                    if(startPos == string::npos)
+                        break;
+                    startPos +=  param.m_path.length();
+                    size_t endPos = pathC.length();
+                    if(param.m_endChar > 0)
+                        endPos = pathC.find_first_of(param.m_endChar, startPos);
+                    auto val = pathC.substr(startPos, endPos - startPos);
+                    req->m_pathParams[param.m_name] = g_decodeUri(val.c_str());
+                    pathC.erase(startPos, endPos - startPos);
+                    pathC.insert(startPos,"{}");
                 }
-
-                totalSent += sent;
+                if(route.m_pathParams.size() == req->m_pathParams.size())
+                {
+                    route.m_callBack(*(req.get()), *(res.get()));
+                    return true;
+                }
+                else
+                    req->m_pathParams.clear();
             }
+        }
+        return false;
+    }
+
+    void Server::h_processRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, Router& router)
+    {
+        auto fullPath = req->getPath();
+        auto pos1 = fullPath.find_first_of("/");
+        auto pos2 = fullPath.find_last_of("/");
+        string URLPath = fullPath.substr(pos1, pos2 - pos1 + 1);
+        string fileName = fullPath.substr(pos2 + 1);
+
+        if(h_searchStaticRoutes(res, URLPath, fileName,router))
+            return;
+
+        if(!h_searchDefinedRoutes(req, res, URLPath + fileName, router))
+        {
+            res->setStatus(404);
+            res->setBodyHTML("<html><pre>Invalid "+ gMethodToStr(req->getMethod())  + " request to " + URLPath + "</pre><br/><h6>RESTC++</html>");
+        }
+
+    }
+
+
+    void Server::h_closeSocket(const SOCKET& sock)
+    {
+#ifdef _WIN32
+        if(shutdown(sock, SD_BOTH) == SOCKET_ERROR)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+            std::cout << WSAGetLastError() << std::endl;
+        };
+        if(closesocket(sock) == SOCKET_ERROR)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+            std::cout << WSAGetLastError() << std::endl;
+        };
+#else
+        if(shutdown(sock, SHUT_RDWR) < 0)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+        };
+        if(close(sock) < 0)
+        {
+            std::cout << "Error while closing socket" << std::endl;
+        };
+#endif
+    }
+
+    void Server::h_sendToSocket(const SOCKET& sock,const string& message)
+    {
+        size_t sent = 0,totalSent = 0;
+        const char* buffer = message.c_str();
+
+        while(totalSent < message.length())
+        {
+            if((sent = send(sock, buffer + totalSent, message.length() - totalSent,0)) < 0)
+            {
+                std::cout << "Error while sending response" << std::endl;
+            }
+
+            totalSent += sent;
         }
     }
+
 
 
 
@@ -160,34 +188,34 @@ namespace restcpp
         WSADATA wsaData;
         WSAStartup(0x202,&wsaData);
 
-        if((mSock = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) == INVALID_SOCKET)
+        if((m_sock = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) == INVALID_SOCKET)
 #else
-        if((mSock = socket(AF_INET,SOCK_STREAM,0)) < 0)
+        if((m_sock = socket(AF_INET,SOCK_STREAM,0)) < 0)
 #endif
         {
             std::cout << "Error while initilazing socket\n";
         }
 #ifndef _WIN32
-        fcntl(mAcceptSocket, F_SETFL,O_NONBLOCK);
+        fcntl(m_acceptSocket, F_SETFL,O_NONBLOCK);
 #endif
         int op = 1;
-        setsockopt(mSock, SOL_SOCKET, SO_REUSEADDR, (char*)&op, sizeof(op));
+        setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&op, sizeof(op));
 
-        mServerAddr.sin_family = AF_INET;
-        mServerAddr.sin_port = htons(mPort);
+        m_serverAddr.sin_family = AF_INET;
+        m_serverAddr.sin_port = htons(m_port);
 #ifdef _WIN32
-        mServerAddr.sin_addr.S_un.S_addr = INADDR_ANY;
+        m_serverAddr.sin_addr.S_un.S_addr = INADDR_ANY;
 #else
-        mServerAddr.sin_addr.s_addr = INADDR_ANY;
+        m_serverAddr.sin_addr.s_addr = INADDR_ANY;
 #endif
 
 
-        if(bind(mSock, (struct sockaddr*) &mServerAddr, sizeof(mServerAddr)) < 0)
+        if(bind(m_sock, (struct sockaddr*) &m_serverAddr, sizeof(m_serverAddr)) < 0)
         {
             std::cout << "Error while binding socket\n";
         }
 
-        if(listen(mSock, SOMAXCONN))
+        if(listen(m_sock, SOMAXCONN))
         {
             std::cout << "Error while listening socket\n";
         }
@@ -195,7 +223,50 @@ namespace restcpp
     }
 
 
-    const string Server::fRecieveNext(uint64_t socket)
+
+
+
+    void Server::run()
+    {
+        ThreadPool tPool(3);
+        while(1)
+        {
+#ifdef _WIN32
+            if((m_acceptSocket = accept(m_sock,0,0)) == INVALID_SOCKET)
+#else
+            if((m_acceptSocket = accept(m_sock,0,0)) < 0)
+#endif
+            {
+                //std::cout << "Error while initilazing accept socket\n";
+                continue;
+            }
+        
+#ifdef _WIN32
+#else
+            struct timeval timeout;
+            timeout.tv_sec = 5;
+            timeout.tv_usec = 0;
+            setsockopt(m_acceptSocket, SOL_SOCKET, SO_RCVTIMEO,&timeout,sizeof(timeout));
+#endif
+
+            //fOnRequest(m_acceptSocket);
+            auto res = tPool.enqueue(std::bind(&Server::onRequest,this,m_acceptSocket));
+        }
+
+        h_closeSocket(m_sock);
+    }
+
+
+    void Server::onRequest(SOCKET socket)
+    {
+        const string reqData = recieveNext(m_acceptSocket);
+        if(reqData == "")
+            return;
+        auto res = processRequest(reqData);
+        sendResponse(res,socket);
+    }
+
+    const string Server::recieveNext(SOCKET socket)
     {
         string rawData;
         char buffer[8192];
@@ -260,74 +331,29 @@ namespace restcpp
     }
 
 
-    void Server::fRun()
-    {
-        ThreadPool tPool(8);
-        while(1)
-        {
-            socklen_t size = sizeof(mClientAddr);
-#ifdef _WIN32
-            if((mAcceptSocket = accept(mSock,0,0)) == INVALID_SOCKET)
-#else
-            if((mAcceptSocket = accept(mSock,0,0)) < 0)
-#endif
-            {
-                //std::cout << "Error while initilazing accept socket\n";
-                auto val = WSAGetLastError();
-                if(val != 10035)
-                    std::cout << val << std::endl;
-                continue;
-            }
-        
-#ifdef _WIN32
-#else
-            struct timeval timeout;
-            timeout.tv_sec = 5;
-            timeout.tv_usec = 0;
-            setsockopt(mAcceptSocket, SOL_SOCKET, SO_RCVTIMEO,&timeout,sizeof(timeout));
-#endif
-
-            //fOnRequest(mAcceptSocket);
-            auto res = tPool.fEnqueue(std::bind(&Server::fOnRequest,this,mAcceptSocket));
-        }
-
-        hCloseSocket(mSock);
-    }
-
-
-    void Server::fOnRequest(uint64_t socket)
-    {
-        const string reqData = fRecieveNext(mAcceptSocket);
-        if(reqData == "")
-            return;
-        auto res = fProcessRequest(reqData);
-        fSendResponse(res,socket);
-    }
-
-    std::shared_ptr<HTTPResponse> Server::fProcessRequest(const string& rawData)
+    std::shared_ptr<HTTPResponse> Server::processRequest(const string& rawData)
     {   
 
         auto res = std::make_shared<HTTPResponse>();
         try
         {
-            hSetMainHeaders(res);
+            h_setMainHeaders(res);
             if(rawData == "HTTPFAIL")
             {
-                res->fSetStatus(408);
+                res->setStatus(408);
                 return res;
             }
             auto req = std::make_shared<HTTPRequest>(rawData);
-            if(req->fGetMethod() == METHOD::HEAD)
-                res->fSetHeaderOnly(true);
-            res->fSetHTTPVersion(req->fGetHTTPVersion());
-            if(req->fGetMethod() == METHOD::OPTIONS)
+            if(req->getMethod() == METHOD::HEAD)
+                res->setHeaderOnly(true);
+            res->setHTTPVersion(req->getHTTPVersion());
+            if(req->getMethod() == METHOD::OPTIONS)
             {
-                hSetOptions(req,res,mRouter);
+                h_setOptions(req,res,m_router);
                 return res;
             }
             
-            if(mRouter != nullptr)
-                hProcessRouter(req,res,mRouter);
+            h_processRouter(req,res,m_router);
         }
         catch (runtime_error ex)
         {
@@ -337,13 +363,14 @@ namespace restcpp
     }
 
 
-    void Server::fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t& sock)
+    void Server::sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock)
     {
         try
         {
-            hSendToSocket(sock,response->fSerializeResponse());
 
-            hCloseSocket(sock);
+            h_sendToSocket(sock,response->serializeResponse());
+
+            h_closeSocket(sock);
         }
         catch (runtime_error ex)
         {

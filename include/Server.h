@@ -25,6 +25,7 @@
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
 #include "ThreadPool.h"
+#include "Router.h"
 
 namespace restcpp
 {
@@ -41,35 +42,30 @@ namespace restcpp
     class Server
     {
         public:
-            Server(uint16_t port = 8080) : mPort(port) { init(); };
-            void fRun();
-            void fStop();
-            void fSetLogging(bool value) { mLog = value; };
-            class Router
-            {
-                public:
-                    void fAddRoute(const string& URLPath, const METHOD& method, const function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { mRoutes.push_back(std::make_tuple(URLPath, method, callBack)); };
-                    void fAddStaticRoute(string URLPath, string folderPath) { mStaticRoutes[URLPath] = folderPath; };
-                    const unordered_map<string,string>& fGetStaticRoutes() const { return mStaticRoutes; };
-                    const vector<std::tuple<string,METHOD,function<void(const HTTPRequest&,HTTPResponse&)>>>& fGetDefinedRoutes() const { return mRoutes; }; 
-                    friend class HTTPServer;
-                private:
-                    unordered_map<string,string> mStaticRoutes;
-                    vector<std::tuple<string,METHOD,function<void(const HTTPRequest&,HTTPResponse&)>>> mRoutes;
-            };
-            void fConnectRouter(Router* router) { mRouter = router; };
+            Server(uint16_t port = 8080) : m_port(port),m_router() { init(); HTTPRequest::m_router = &m_router; };
+            void addRoute(const string& URLPath, const METHOD& method, const function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { m_router.m_routes.push_back(Router::route(URLPath, method, callBack)); };
+            void addStaticRoute(string URLPath, string folderPath) { m_router.m_staticRoutes[URLPath] = folderPath; };
+            void run();
+            void stop();
+            void setLogging(bool value) { m_log = value; };
         private:
-            uint64_t mSock,mAcceptSocket;
-            struct sockaddr_in mServerAddr,mClientAddr;
-            bool mLog; 
-            uint16_t mPort;
-            Router* mRouter;
-            vector<thread> mClientThreads;
+            SOCKET m_sock,m_acceptSocket;
+            struct sockaddr_in m_serverAddr;
+            bool m_log; 
+            uint16_t m_port;
+            Router m_router;
             void init();
-            void fOnRequest(uint64_t socket);
-            const string fRecieveNext(uint64_t socket);
-            std::shared_ptr<HTTPResponse> fProcessRequest(const string& rawData);
-            void fSendResponse(std::shared_ptr<HTTPResponse>& response,const uint64_t& sock);
+            void onRequest(SOCKET socket);
+            const string recieveNext(SOCKET socket);
+            std::shared_ptr<HTTPResponse> processRequest(const string& rawData);
+            static void sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock);
+            static void h_setMainHeaders(std::shared_ptr<HTTPResponse> res);
+            static void h_setOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Router& router);
+            static bool h_searchStaticRoutes(std::shared_ptr<HTTPResponse> res, string path,string fileName,Router& router);
+            static bool h_searchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const string& path,const Router& router);
+            static void h_processRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, Router& router);
+            static void h_closeSocket(const SOCKET& sock);
+            static void h_sendToSocket(const SOCKET& sock,const string& message);
     };
 
 }

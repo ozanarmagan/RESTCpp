@@ -26,28 +26,28 @@ namespace restcpp
     {
         public:
             HTTPResponse() {   };
-            void fSetStatus(const short& code) { mStatusCode = code; };
-            void fSetHTTPVersion(const HTTP_VERSION& version) { mRequestVersion = version; };
-            void fAddHeader(const string& key, const string& value) {  mHeaders[key] = value; };
-            void fDeleteHeader(const string& key) { mHeaders.erase(key); };
-            void fSetBodyText(const string& body) { mHeaders["Content-Type"] = "text/plain"; mRequestBody = body; };
-            void fSetBodyHTML(const string& serializedHTML) { mHeaders["Content-Type"] = "text/html"; mRequestBody = serializedHTML; };
-            void fSetBodyFormData(const vector<FormData*> form);
-            void fSetBodyFile(const string& fileName);
-            void fSetBodyJSON(const string& serializedJSON) { mHeaders["Content-Type"] = "application/json"; mRequestBody = serializedJSON; };
-            void fSetHeaderOnly(bool val) { mHeaderOnly = val; };
-            const HTTP_VERSION fGetHTTPVersion() const { return mRequestVersion; };
-            const short fGetStatusCode() const { return mStatusCode; }; 
-            const unordered_map<string,string> fGetHeaders() const { return mHeaders; };
-            const string fGetBody() const { return mRequestBody; };
-            const bool fIsHeaderOnly() const { return mHeaderOnly; };
-            const string fSerializeResponse() const;
+            void setStatus(const short& code) { m_statusCode = code; };
+            void setHTTPVersion(const HTTP_VERSION& version) { m_requestVersion = version; };
+            void addHeader(const string& key, const string& value) {  m_headers[key] = value; };
+            void deleteHeader(const string& key) { m_headers.erase(key); };
+            void setBodyText(const string& body) { m_headers["Content-Type"] = "text/plain"; m_requestBody = body; };
+            void setBodyHTML(const string& serializedHTML) { m_headers["Content-Type"] = "text/html"; m_requestBody = serializedHTML; };
+            void setBodyFormData(const vector<FormData*> form);
+            void setBodyFile(const string& fileName);
+            void setBodyJSON(const string& serializedJSON) { m_headers["Content-Type"] = "application/json"; m_requestBody = serializedJSON; };
+            void setHeaderOnly(bool val) { m_headerOnly = val; };
+            const HTTP_VERSION getHTTPVersion() const { return m_requestVersion; };
+            const short getStatusCode() const { return m_statusCode; }; 
+            const unordered_map<string,string> getHeaders() const { return m_headers; };
+            const string getBody() const { return m_requestBody; };
+            const bool isHeaderOnly() const { return m_headerOnly; };
+            const string serializeResponse() const;
         private:
-            bool mHeaderOnly = false;
-            HTTP_VERSION mRequestVersion = {1, 1};
-            short mStatusCode;
-            unordered_map<string,string> mHeaders;
-            string mRequestBody;
+            bool m_headerOnly = false;
+            HTTP_VERSION m_requestVersion = {1, 1};
+            short m_statusCode;
+            unordered_map<string,string> m_headers;
+            string m_requestBody;
     };
 
 

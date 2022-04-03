@@ -16,20 +16,20 @@ namespace restcpp
             return res;
         }
     }
-    const string HTTPResponse::fSerializeResponse() const 
+    const string HTTPResponse::serializeResponse() const 
     {
         string res = "";
         try
         {
-            string statusDesc = gGetStatusDescription(mStatusCode);
-            res += string("HTTP/") + std::to_string(mRequestVersion.majorVersion) + string(".") + std::to_string(mRequestVersion.minorVersion) + " ";
-            res += to_string(mStatusCode) + " " + statusDesc + "\r\n";
-            for(auto& [key,value] : mHeaders)
+            string statusDesc = gGetStatusDescription(m_statusCode);
+            res += string("HTTP/") + std::to_string(m_requestVersion.majorVersion) + string(".") + std::to_string(m_requestVersion.minorVersion) + " ";
+            res += to_string(m_statusCode) + " " + statusDesc + "\r\n";
+            for(auto& [key,value] : m_headers)
                 res += key + ": " + value + "\r\n";
-            if(mRequestBody.length() > 0)
-                res += "Content-Length: " + std::to_string(mRequestBody.length());
-            if(mRequestBody.length() > 0 && !mHeaderOnly)
-            res += string("\r\n\r\n") +  mRequestBody;
+            if(m_requestBody.length() > 0)
+                res += "Content-Length: " + std::to_string(m_requestBody.length());
+            if(m_requestBody.length() > 0 && !m_headerOnly)
+            res += string("\r\n\r\n") +  m_requestBody;
         }
         catch (runtime_error ex)
         {
@@ -38,49 +38,49 @@ namespace restcpp
         return res;
     }
 
-    void HTTPResponse::fSetBodyFormData(const vector<FormData*> form)
+    void HTTPResponse::setBodyFormData(const vector<FormData*> form)
     {
         string boundary = "BOUNDARY__" + gGenerateBoundary();
-        mHeaders["Content-Type"] = " multipart/form-data; boundary=" + boundary;
+        m_headers["Content-Type"] = " multipart/form-data; boundary=" + boundary;
         for(auto& data : form)
         {
-            mRequestBody += "--" + boundary + "\r\n";
-            mRequestBody += "Content-Disposition: form-data; ";
-            mRequestBody += "name=\"" + data->fGetName() + "\"";
-            if(data->fGetFileName() != "")
-                mRequestBody += "name=\"" + data->fGetFileName() + "\"";
-            if(data->fGetContentType() != "")
-                mRequestBody += string("\r\n") + "Content-Type: " + data->fGetContentType();
-            mRequestBody += "\r\n\r\n";
-            if(data->fIsBinary())
+            m_requestBody += "--" + boundary + "\r\n";
+            m_requestBody += "Content-Disposition: form-data; ";
+            m_requestBody += "name=\"" + data->getName() + "\"";
+            if(data->getFileName() != "")
+                m_requestBody += "name=\"" + data->getFileName() + "\"";
+            if(data->getContentType() != "")
+                m_requestBody += string("\r\n") + "Content-Type: " + data->getContentType();
+            m_requestBody += "\r\n\r\n";
+            if(data->isBinary())
             {
-                const byte* dataHead = data->fGetBinaryData();
-                auto length = data->fGetBinaryDataLength();
+                const byte* dataHead = data->getBinaryData();
+                auto length = data->getBinaryDataLength();
                 for(int i = 0;i < length;i++)
-                    mRequestBody += dataHead[i];
+                    m_requestBody += dataHead[i];
             }
             else
-                mRequestBody += data->fGetTextData();
+                m_requestBody += data->getTextData();
             
-            mRequestBody += "\r\n";
+            m_requestBody += "\r\n";
         }
 
-        mRequestBody += "--" + boundary + "--";
+        m_requestBody += "--" + boundary + "--";
     }
 
-    void HTTPResponse::fSetBodyFile(const string& fileName)
+    void HTTPResponse::setBodyFile(const string& fileName)
     {
         try
         {
             auto MIME = gMIMETable.at(fileName.substr(fileName.find_last_of('.') + 1));
-            mHeaders["Content-Type"] = " " + MIME;
+            m_headers["Content-Type"] = " " + MIME;
             std::ifstream file(fileName);
 
             if(file.good())
             {
                 stringstream stream;
                 stream << file.rdbuf();
-                mRequestBody = stream.str();
+                m_requestBody = stream.str();
             }
             
             file.close();
