@@ -26,11 +26,11 @@ namespace restcpp
     {
         public:
             Proxy(string address);
-            HTTPResponse& getResponse();
+            const HTTPResponse& getResponse() const { return m_response; };
 
         private:
             char* m_buffer;
-            HTTPRequest m_request;
+            HTTPResponse m_response;
             struct sockaddr_in m_client;
             struct hostent* m_host;
             SOCKET m_socket;

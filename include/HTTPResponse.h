@@ -36,6 +36,7 @@ namespace restcpp
             void setBodyFile(const string& fileName);
             void setBodyJSON(const string& serializedJSON) { m_headers["Content-Type"] = "application/json"; m_requestBody = serializedJSON; };
             void setHeaderOnly(bool val) { m_headerOnly = val; };
+            void setContentType(const string& contentType) { m_headers["Content-Type"] = contentType; };
             const HTTP_VERSION getHTTPVersion() const { return m_requestVersion; };
             const short getStatusCode() const { return m_statusCode; }; 
             const unordered_map<string,string> getHeaders() const { return m_headers; };
