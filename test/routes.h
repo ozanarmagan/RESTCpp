@@ -25,5 +25,5 @@ void testParams(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 
 void proxyTest(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 {
-    res = restcpp::Proxy("eksisozluk.com").getResponse();
+    res = restcpp::Proxy("google.com").getResponse();
 }

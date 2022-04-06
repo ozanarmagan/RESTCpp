@@ -54,7 +54,6 @@ namespace restcpp
             void setFormData(FormData form) { m_formData.push_back(form); }
         private:
             friend class Server;
-            inline static Router* m_router;
             METHOD m_method;
             HTTP_VERSION m_requestVersion;
             time_t m_time;

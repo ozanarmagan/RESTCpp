@@ -45,7 +45,7 @@ namespace restcpp
     class Server
     {
         public:
-            Server(uint16_t port = 8080) : m_port(port),m_router() { init(); HTTPRequest::m_router = &m_router; };
+            Server(uint16_t port = 8080) : m_port(port),m_router() { init(); };
             void addRoute(const string& URLPath, const METHOD& method, const function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { m_router.m_routes.push_back(Router::route(URLPath, method, callBack)); };
             void addStaticRoute(string URLPath, string folderPath) { m_router.m_staticRoutes[URLPath] = folderPath; };
             void run();
