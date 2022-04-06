@@ -11,7 +11,7 @@ namespace restcpp
     void Server::h_setMainHeaders(std::shared_ptr<HTTPResponse> res)
     {
         res->setStatus(200);
-        res->addHeader("Server","RESTC++");
+        res->addHeader("Server","RESTC++ Server v1.0");
         time_t currTime;
         time(&currTime);
         string timeStr = ctime(&currTime);
