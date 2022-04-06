@@ -2,6 +2,11 @@
 
 namespace restcpp
 {
+	/**
+	 * @brief Construct a new Proxy:: Proxy object
+	 * 
+	 * @param address to fetch proxy
+	 */
     Proxy::Proxy(string address)
     {
         m_parseAddress(address);
@@ -10,6 +15,10 @@ namespace restcpp
 		m_getResponse();
     }
 
+	/**
+	 * @brief Send HTTP request for proxy
+	 * 
+	 */
 	void Proxy::m_sendRequest()
 	{
         string req = "GET /" + m_addressTail + " HTTP/1.1\r\nHost: " + m_addressHead  +  "\r\nAccept: */*\r\nUser-Agent: RESTC++ Client v1.0\r\n\r\n";
@@ -17,14 +26,16 @@ namespace restcpp
 		shutdown(m_socket, SD_SEND);  
 	}
 	
-
+	/**
+	 * @brief Get an create response to return from proxy
+	 * 
+	 */
 	void Proxy::m_getResponse()
 	{
         char cur;
         string res;
 		char buff[8192];
 		int recvd;
-		std::cout << "listening...";
 #ifdef _WIN32
         while ((recvd = recv(m_socket, &buff[0], 8191,0)) > 0 ) {
 #else
@@ -103,7 +114,11 @@ namespace restcpp
 	}
 
 
-
+	/**
+	 * @brief Function to parse address 
+	 * 
+	 * @param address to parse
+	 */
     void Proxy::m_parseAddress(string address)
     {
         if(address.find("://") != string::npos)

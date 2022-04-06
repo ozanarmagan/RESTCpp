@@ -38,7 +38,10 @@ namespace restcpp
     using std::stringstream;
     using std::memcpy;
     using std::memset;
-
+    /**
+     * @brief Main class for server 
+     * 
+     */
     class Server
     {
         public:

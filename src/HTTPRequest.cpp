@@ -3,6 +3,13 @@
 namespace restcpp
 {
     namespace {
+        /**
+         * @brief Helper function to split a string by a delimeter char
+         * 
+         * @param to_split 
+         * @param delimiter 
+         * @return vector<string> 
+         */
         vector<string> splitByChar(string to_split, char delimiter) {
             vector<string> tokens;
             string token;
@@ -20,6 +27,13 @@ namespace restcpp
             return tokens;
         }
 
+        /**
+         * @brief Helper function to split a string by a delimeter string
+         * 
+         * @param str 
+         * @param delimeter 
+         * @return vector<string> 
+         */
         vector<string> splitByStr(string str,string delimeter)
         {
             std::vector<std::string> splittedStrings = {};
@@ -38,6 +52,12 @@ namespace restcpp
             return splittedStrings;
         }
 
+        /**
+         * @brief Helper function to decode given url
+         * 
+         * @param in 
+         * @return string 
+         */
         string decodeUri(const char* in) 
         {
             string res;
@@ -76,7 +96,11 @@ namespace restcpp
         }
     }
 
-
+    /**
+     * @brief Construct a new HTTPRequest::HTTPRequest object
+     * 
+     * @param data raw data to parse and create HTTPRequest object
+     */
     HTTPRequest::HTTPRequest(const string& data)
     {
         try
@@ -222,9 +246,6 @@ namespace restcpp
                     memcpy(m_rawBodyData.get(), body.c_str(), sizeof(byte) * body.length());
                 }
             }
-
-            
-
 
         }
         catch (runtime_error ex)

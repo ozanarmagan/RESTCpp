@@ -17,6 +17,10 @@ namespace restcpp
     class HTTPRequest;
     class HTTPResponse;
 
+    /**
+     * @brief Router class to store both static and dynamic routes for urls
+     * 
+     */
     class Router
     {
         public:
@@ -26,6 +30,11 @@ namespace restcpp
                 string m_name;
                 char m_endChar = 0;
             };
+            /**
+             * @brief Route struct to hold routes, callBack function will be called when a route with given URL Path and method found.
+             * Also stores path parameters to use path parameters as variables
+             * 
+             */
             struct route
             {
                 route(const string& URLPath, const METHOD& method, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack)

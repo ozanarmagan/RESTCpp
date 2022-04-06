@@ -9,7 +9,10 @@
 namespace restcpp
 {
     using std::string;
-
+    /**
+     * @brief Class to store form data as seperate objects and add to requests or responses.Stored data can be both text or binary
+     * 
+     */
     class FormData
     {
         public:

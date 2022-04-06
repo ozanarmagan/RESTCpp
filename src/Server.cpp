@@ -3,6 +3,11 @@
 namespace restcpp
 {
 
+    /**
+     * @brief Set common headers for given response
+     * 
+     * @param res to set headers of it
+     */
     void Server::h_setMainHeaders(std::shared_ptr<HTTPResponse> res)
     {
         res->setStatus(200);
@@ -16,6 +21,13 @@ namespace restcpp
         res->addHeader("Connection","Close");
     }
 
+    /**
+     * @brief Set options header for request
+     * 
+     * @param req 
+     * @param res 
+     * @param router 
+     */
     void Server::h_setOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Router& router)
     {
         res->setStatus(204);
@@ -42,6 +54,15 @@ namespace restcpp
         res->addHeader("Allow",allowedMethods);
     }
 
+    /**
+     * @brief Search for a static route for the path given
+     * 
+     * @param res 
+     * @param path 
+     * @param fileName 
+     * @param router 
+     * @return true if a static path found in router for given path
+     */
     bool Server::h_searchStaticRoutes(std::shared_ptr<HTTPResponse> res, string path,string fileName,Router& router)
     {
         bool hasFoundPath = false;
@@ -71,6 +92,15 @@ namespace restcpp
         return hasFoundPath;
     }
 
+    /**
+     * @brief Function to search dynamic routes
+     * 
+     * @param req 
+     * @param res 
+     * @param path 
+     * @param router 
+     * @return true if a dynamic route found for that path
+     */
     bool Server::h_searchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const string& path,const Router& router)
     {
         for(const auto& route : router.getDefinedRoutes())
@@ -116,6 +146,13 @@ namespace restcpp
         return false;
     }
 
+    /**
+     * @brief Search for both static and dynamic routes in router 
+     * 
+     * @param req 
+     * @param res 
+     * @param router 
+     */
     void Server::h_processRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, Router& router)
     {
         auto fullPath = req->getPath();
@@ -135,7 +172,11 @@ namespace restcpp
 
     }
 
-
+    /**
+     * @brief Helper function to close a socket
+     * 
+     * @param sock 
+     */
     void Server::h_closeSocket(const SOCKET& sock)
     {
 #ifdef _WIN32
@@ -180,7 +221,10 @@ namespace restcpp
 
 
 
-
+    /**
+     * @brief Init sockets for server
+     * 
+     */
     void Server::init()
     {
 
@@ -225,10 +269,13 @@ namespace restcpp
 
 
 
-
+    /**
+     * @brief Run server with a thread pool 
+     * 
+     */
     void Server::run()
     {
-        ThreadPool tPool(3);
+        ThreadPool tPool(THREAD_COUNT);
         while(1)
         {
 #ifdef _WIN32
@@ -241,8 +288,7 @@ namespace restcpp
                 continue;
             }
         
-#ifdef _WIN32
-#else
+#ifndef _WIN32
             struct timeval timeout;
             timeout.tv_sec = 5;
             timeout.tv_usec = 0;
@@ -256,7 +302,11 @@ namespace restcpp
         h_closeSocket(m_sock);
     }
 
-
+    /**
+     * @brief Wrapper function to be called on every client connection
+     * 
+     * @param socket 
+     */
     void Server::onRequest(SOCKET socket)
     {
         const string reqData = recieveNext(m_acceptSocket);
@@ -266,6 +316,12 @@ namespace restcpp
         sendResponse(res,socket);
     }
 
+    /**
+     * @brief Recieve request from socket
+     * 
+     * @param socket to listen
+     * @return const string raw request as string
+     */
     const string Server::recieveNext(SOCKET socket)
     {
         string rawData;
@@ -331,6 +387,12 @@ namespace restcpp
     }
 
 
+    /**
+     * @brief Process raw request data recieved from the socket and parse it into HTTPResponse object
+     * 
+     * @param rawData 
+     * @return std::shared_ptr<HTTPResponse> pointer to parsed HTTPResponse object
+     */
     std::shared_ptr<HTTPResponse> Server::processRequest(const string& rawData)
     {   
 
@@ -362,7 +424,12 @@ namespace restcpp
         return res;
     }
 
-
+    /**
+     * @brief Send response through the socket
+     * 
+     * @param response 
+     * @param sock 
+     */
     void Server::sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock)
     {
         try

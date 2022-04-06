@@ -4,6 +4,11 @@ namespace restcpp
 {
     namespace 
     {
+        /**
+         * @brief Generate boundary for formdata
+         * 
+         * @return string 
+         */
         string gGenerateBoundary()
         {
             string res = "-----------------";
@@ -16,6 +21,11 @@ namespace restcpp
             return res;
         }
     }
+    /**
+     * @brief Serialize response into string 
+     * 
+     * @return const string 
+     */
     const string HTTPResponse::serializeResponse() const 
     {
         string res = "";
@@ -38,6 +48,11 @@ namespace restcpp
         return res;
     }
 
+    /**
+     * @brief Put formdata objects into the response
+     * 
+     * @param form 
+     */
     void HTTPResponse::setBodyFormData(const vector<FormData*> form)
     {
         string boundary = "BOUNDARY__" + gGenerateBoundary();
@@ -68,6 +83,11 @@ namespace restcpp
         m_requestBody += "--" + boundary + "--";
     }
 
+    /**
+     * @brief Set a file to body
+     * 
+     * @param fileName 
+     */
     void HTTPResponse::setBodyFile(const string& fileName)
     {
         try

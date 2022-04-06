@@ -9,17 +9,33 @@ namespace restcpp
 {
     using std::runtime_error;
 
+    /**
+     * @brief Thread count to be used for thread pool by server
+     * 
+     */
+    static constexpr int THREAD_COUNT = 3;
+
+    /**
+     * @brief HTTP method types
+     * 
+     */
     enum class METHOD {
         GET,POST,PUT,PATCH,DEL,HEAD,OPTIONS,INVALID
     };
 
-
+    /**
+     * @brief Struct to keep HTTP versions
+     * 
+     */
     typedef struct {
         short majorVersion,minorVersion;
     } HTTP_VERSION;
 
 
-
+    /**
+     * @brief HTTP Protocols
+     * 
+     */
     enum class HTTP_PROTOCOL {
         HTTP1_0,HTTP1_1,HTTP2_0,HTTP3_0,INVALID
     };
@@ -27,6 +43,12 @@ namespace restcpp
     typedef uint64_t SOCKET;
 
 
+    /**
+     * @brief Function to serialized method to string
+     * 
+     * @param method 
+     * @return std::string 
+     */
     inline std::string gMethodToStr(const METHOD& method)
     {
         switch(method)
@@ -121,6 +143,12 @@ namespace restcpp
         }
 
 
+    /**
+     * @brief Get description of status code as string
+     * 
+     * @param statusCode 
+     * @return std::string 
+     */
     inline std::string gGetStatusDescription(short statusCode)
     {
         std::string res;
@@ -198,6 +226,10 @@ namespace restcpp
 
     typedef unsigned char byte;
 
+    /**
+     * @brief Map to store MIME types and descriptions
+     * 
+     */
     const static std::unordered_map<std::string,std::string> gMIMETable = {
         {"3dm", "x-world/x-3dmf"},
         {"3dmf","x-world/x-3dmf"},

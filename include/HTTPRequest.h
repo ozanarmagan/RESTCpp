@@ -20,6 +20,10 @@ namespace restcpp
     using std::memcpy;
 
 
+    /**
+     * @brief Class to create,store and parse HTTP Requests
+     * 
+     */
     class HTTPRequest
     {
         public:

@@ -21,7 +21,10 @@ namespace restcpp
     using std::to_string;
     using std::stringstream;
 
-
+    /**
+     * @brief Class to create,store and utilitize HTTP Responses
+     * 
+     */
     class HTTPResponse
     {
         public:
