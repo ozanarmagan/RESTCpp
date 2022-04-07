@@ -16,7 +16,7 @@ RestC++ is a micro web framework developed with modern C++. Currently supports W
   - [Proxy](#proxy)
 - [Notes](#notes)
 ## How to build
-You can easily build by Makefile included to repo for both Windows and Linux
+You can easily build by CMake or Makefile included to repo for both Windows and Linux
 ## Components of RESTC++
 ### Server
 This is wrapper class for whole framework, to be able run the server.
