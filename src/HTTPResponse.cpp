@@ -41,7 +41,7 @@ namespace restcpp
             if(m_requestBody.length() > 0 && !m_headerOnly)
             res += std::string("\r\n\r\n") +  m_requestBody;
         }
-        catch (runtime_error ex)
+        catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\nError while serializing response";
         }
@@ -105,7 +105,7 @@ namespace restcpp
             
             file.close();
         }
-        catch (runtime_error ex)
+        catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\nError while set file to body\n" << fileName; 
         }
