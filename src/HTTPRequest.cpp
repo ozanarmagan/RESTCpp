@@ -4,15 +4,15 @@ namespace restcpp
 {
     namespace {
         /**
-         * @brief Helper function to split a string by a delimeter char
+         * @brief Helper function to split a std::string by a delimeter char
          * 
          * @param to_split 
          * @param delimiter 
-         * @return vector<string> 
+         * @return std::vector<std::string> 
          */
-        vector<string> splitByChar(string to_split, char delimiter) {
-            vector<string> tokens;
-            string token;
+        std::vector<std::string> splitByChar(std::string to_split, char delimiter) {
+            std::vector<std::string> tokens;
+            std::string token;
 
             for (const auto& c: to_split) {
                 if (c != delimiter)
@@ -28,13 +28,13 @@ namespace restcpp
         }
 
         /**
-         * @brief Helper function to split a string by a delimeter string
+         * @brief Helper function to split a std::string by a delimeter std::string
          * 
          * @param str 
          * @param delimeter 
-         * @return vector<string> 
+         * @return std::vector<std::string> 
          */
-        vector<string> splitByStr(string str,string delimeter)
+        std::vector<std::string> splitByStr(std::string str,std::string delimeter)
         {
             std::vector<std::string> splittedStrings = {};
             size_t pos = 0;
@@ -56,11 +56,11 @@ namespace restcpp
          * @brief Helper function to decode given url
          * 
          * @param in 
-         * @return string 
+         * @return std::string 
          */
-        string decodeUri(const char* in) 
+        std::string decodeUri(const char* in) 
         {
-            string res;
+            std::string res;
             static const char tbl[256] = {
                 -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
                 -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
@@ -101,7 +101,7 @@ namespace restcpp
      * 
      * @param data raw data to parse and create HTTPRequest object
      */
-    HTTPRequest::HTTPRequest(const string& data)
+    HTTPRequest::HTTPRequest(const std::string& data)
     {
         try
         {
@@ -109,7 +109,7 @@ namespace restcpp
 
             m_time = std::time(nullptr);
 
-            vector<string> vec = splitByChar(data,'\r');
+            std::vector<std::string> vec = splitByChar(data,'\r');
 
             cursor = vec[0].find_first_of(' ');
 
@@ -133,13 +133,13 @@ namespace restcpp
             cursor = data.find_first_of(" ",cursorPrev);
             m_path = data.substr(cursorPrev,cursor - cursorPrev);
 
-            if(m_path.find('?') != string::npos)
+            if(m_path.find('?') != std::string::npos)
             {
-                string queryStr = m_path.substr(m_path.find("?") + 1);
+                std::string queryStr = m_path.substr(m_path.find("?") + 1);
                 m_path = m_path.substr(0,m_path.find("?"));
                 
                 queryStr = decodeUri(queryStr.c_str());
-                vector<string> queries = splitByChar(queryStr,'&');
+                std::vector<std::string> queries = splitByChar(queryStr,'&');
 
                 for(auto& query : queries)
                 {
@@ -152,7 +152,7 @@ namespace restcpp
 
             cursorPrev = cursor + 1;
             auto protocolStr = vec[0].substr(cursorPrev,vec[0].length() - cursorPrev);   
-            if(protocolStr.find("HTTP/") != string::npos)
+            if(protocolStr.find("HTTP/") != std::string::npos)
             {
                 auto pos = protocolStr.find("HTTP/") + 5;
                 short majorV = protocolStr.substr(pos, protocolStr.find(".",pos) - pos)[0] - 48;
@@ -168,7 +168,7 @@ namespace restcpp
                 if(vec[i] == "\n")
                     break;
                 auto pos = vec[i].find(":");
-                if(pos != string::npos)
+                if(pos != std::string::npos)
                 {
                     auto key = vec[i].substr(1,pos - 1);
                     auto val = vec[i].substr(pos + 1, vec[i].length() - pos - 1);
@@ -178,30 +178,30 @@ namespace restcpp
 
             if(m_headers["Content-Length"] != "")
             {
-                if(m_headers["Content-Type"].find("multipart/form-data") != string::npos)
+                if(m_headers["Content-Type"].find("multipart/form-data") != std::string::npos)
                 {
-                    string contentType = m_headers["Content-Type"];
-                    string boundary = contentType.substr(contentType.find("boundary=") + 9);
-                    string body = data.substr(data.find("--" + boundary));
-                    vector<string> form = splitByStr(body,"--" + boundary);
+                    std::string contentType = m_headers["Content-Type"];
+                    std::string boundary = contentType.substr(contentType.find("boundary=") + 9);
+                    std::string body = data.substr(data.find("--" + boundary));
+                    std::vector<std::string> form = splitByStr(body,"--" + boundary);
                     form.pop_back();
 
 
                     for(auto& obj : form)
                     {
-                        string fileName = "";
-                        string name = "";
-                        string data = "";
-                        string contentType = "";
+                        std::string fileName = "";
+                        std::string name = "";
+                        std::string data = "";
+                        std::string contentType = "";
                         bool isBinary = false;
-                        if(obj.find("Content-Type") != string::npos)
+                        if(obj.find("Content-Type") != std::string::npos)
                         {
                             auto pos = obj.find("Content-Type:") + 14;
                             contentType = obj.substr(pos,obj.find("\r\n",pos) - pos);
-                            isBinary = contentType.find("text/") == string::npos;
+                            isBinary = contentType.find("text/") == std::string::npos;
                         }
 
-                        if(obj.find("filename=") != string::npos)
+                        if(obj.find("filename=") != std::string::npos)
                         {
                             auto pos = obj.find("filename=") + 10;
                             fileName = obj.substr(pos,obj.find("\"",pos) - pos);
@@ -225,11 +225,11 @@ namespace restcpp
                     }
                 }
 
-                else if(m_headers["Content-Type"].find("application/x-www-form-urlencoded") != string::npos)
+                else if(m_headers["Content-Type"].find("application/x-www-form-urlencoded") != std::string::npos)
                 {
-                    string body = data.substr(data.find("\r\n\r\n") + 4);
+                    std::string body = data.substr(data.find("\r\n\r\n") + 4);
                     body = decodeUri(body.c_str());
-                    vector<string> objects = splitByChar(body,'&');
+                    std::vector<std::string> objects = splitByChar(body,'&');
                     for(auto& object : objects)
                     {
                         auto pos = object.find("=");
@@ -241,14 +241,14 @@ namespace restcpp
 
                 else
                 {
-                    string body = data.substr(data.find("\r\n\r\n") + 4);
+                    std::string body = data.substr(data.find("\r\n\r\n") + 4);
                     auto m_rawBodyData =  std::make_unique<byte>(body.length());
                     memcpy(m_rawBodyData.get(), body.c_str(), sizeof(byte) * body.length());
                 }
             }
 
         }
-        catch (runtime_error ex)
+        catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\nException while parsing request";
         }

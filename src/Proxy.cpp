@@ -7,7 +7,7 @@ namespace restcpp
 	 * 
 	 * @param address to fetch proxy
 	 */
-    Proxy::Proxy(string address)
+    Proxy::Proxy(std::string address)
     {
         m_parseAddress(address);
 		m_initConnection();
@@ -21,7 +21,7 @@ namespace restcpp
 	 */
 	void Proxy::m_sendRequest()
 	{
-        string req = "GET /" + m_addressTail + " HTTP/1.1\r\nHost: " + m_addressHead  +  "\r\nAccept: */*\r\nUser-Agent: RESTC++ Client v1.0\r\n\r\n";
+        std::string req = "GET /" + m_addressTail + " HTTP/1.1\r\nHost: " + m_addressHead  +  "\r\nAccept: */*\r\nUser-Agent: RESTC++ Client v1.0\r\n\r\n";
         send(m_socket,req.c_str(),req.length(),0);
 		shutdown(m_socket, SD_SEND);  
 	}
@@ -33,7 +33,7 @@ namespace restcpp
 	void Proxy::m_getResponse()
 	{
         char cur;
-        string res;
+        std::string res;
 		char buff[8192];
 		int recvd;
 #ifdef _WIN32
@@ -57,14 +57,14 @@ namespace restcpp
         m_response.addHeader("Server","RESTC++ Server v1.0");
         time_t currTime;
         time(&currTime);
-        string timeStr = ctime(&currTime);
+        std::string timeStr = ctime(&currTime);
         std::replace(timeStr.begin(),timeStr.end(),'\n','\0');
         timeStr = timeStr.substr(0, timeStr.find('\0'));
         m_response.addHeader("Date",timeStr);
         m_response.addHeader("Connection","Close");
 		m_response.setBodyText(res.substr(res.find("\r\n\r\n") + 4));
 		auto contentTypePos = res.find("Content-Type");
-		if(contentTypePos != string::npos)
+		if(contentTypePos != std::string::npos)
 		{
 			contentTypePos += 14;
 			m_response.setContentType(res.substr(contentTypePos,res.find("\r\n",contentTypePos) - contentTypePos));
@@ -76,7 +76,7 @@ namespace restcpp
 	{
         m_host = gethostbyname(m_addressHead.c_str());
         if(m_host == NULL)
-            throw runtime_error("DNS Information could not retrieved for proxy address:" + m_addressHead);
+            throw std::runtime_error("DNS Information could not retrieved for proxy address:" + m_addressHead);
         m_client.sin_family = AF_INET;
         m_client.sin_port = htons(m_port);
 #ifdef _WIN32
@@ -119,15 +119,15 @@ namespace restcpp
 	 * 
 	 * @param address to parse
 	 */
-    void Proxy::m_parseAddress(string address)
+    void Proxy::m_parseAddress(std::string address)
     {
-        if(address.find("://") != string::npos)
+        if(address.find("://") != std::string::npos)
         {
 			address = address.substr(address.find("://") + 3);
         }
-        if(address.find("/") == string::npos)
+        if(address.find("/") == std::string::npos)
         {
-			if(address.find(":") == string::npos)
+			if(address.find(":") == std::string::npos)
 			{
 					m_port = 80;
 					m_addressHead = address;
@@ -143,7 +143,7 @@ namespace restcpp
 			}
         }
         m_addressHead = address.substr(0,address.find("/"));
-        if(m_addressHead.find(":") == string::npos)
+        if(m_addressHead.find(":") == std::string::npos)
 			m_port = 80;
         else
         {

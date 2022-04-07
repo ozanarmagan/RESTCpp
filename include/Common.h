@@ -7,7 +7,6 @@
 
 namespace restcpp
 {
-    using std::runtime_error;
 
     /**
      * @brief Thread count to be used for thread pool by server

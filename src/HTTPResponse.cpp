@@ -7,11 +7,11 @@ namespace restcpp
         /**
          * @brief Generate boundary for formdata
          * 
-         * @return string 
+         * @return std::string 
          */
-        string gGenerateBoundary()
+        std::string gGenerateBoundary()
         {
-            string res = "-----------------";
+            std::string res = "-----------------";
             for(int i = 0;i < 25;i++)
             {
                 srand(time(nullptr));
@@ -22,24 +22,24 @@ namespace restcpp
         }
     }
     /**
-     * @brief Serialize response into string 
+     * @brief Serialize response into std::string 
      * 
-     * @return const string 
+     * @return const std::string 
      */
-    const string HTTPResponse::serializeResponse() const 
+    const std::string HTTPResponse::serializeResponse() const 
     {
-        string res = "";
+        std::string res = "";
         try
         {
-            string statusDesc = gGetStatusDescription(m_statusCode);
-            res += string("HTTP/") + std::to_string(m_requestVersion.majorVersion) + string(".") + std::to_string(m_requestVersion.minorVersion) + " ";
-            res += to_string(m_statusCode) + " " + statusDesc + "\r\n";
+            std::string statusDesc = gGetStatusDescription(m_statusCode);
+            res += std::string("HTTP/") + std::to_string(m_requestVersion.majorVersion) + std::string(".") + std::to_string(m_requestVersion.minorVersion) + " ";
+            res += std::to_string(m_statusCode) + " " + statusDesc + "\r\n";
             for(auto& [key,value] : m_headers)
                 res += key + ": " + value + "\r\n";
             if(m_requestBody.length() > 0)
                 res += "Content-Length: " + std::to_string(m_requestBody.length());
             if(m_requestBody.length() > 0 && !m_headerOnly)
-            res += string("\r\n\r\n") +  m_requestBody;
+            res += std::string("\r\n\r\n") +  m_requestBody;
         }
         catch (runtime_error ex)
         {
@@ -53,9 +53,9 @@ namespace restcpp
      * 
      * @param form 
      */
-    void HTTPResponse::setBodyFormData(const vector<FormData*> form)
+    void HTTPResponse::setBodyFormData(const std::vector<FormData*> form)
     {
-        string boundary = "BOUNDARY__" + gGenerateBoundary();
+        std::string boundary = "BOUNDARY__" + gGenerateBoundary();
         m_headers["Content-Type"] = " multipart/form-data; boundary=" + boundary;
         for(auto& data : form)
         {
@@ -65,7 +65,7 @@ namespace restcpp
             if(data->getFileName() != "")
                 m_requestBody += "name=\"" + data->getFileName() + "\"";
             if(data->getContentType() != "")
-                m_requestBody += string("\r\n") + "Content-Type: " + data->getContentType();
+                m_requestBody += std::string("\r\n") + "Content-Type: " + data->getContentType();
             m_requestBody += "\r\n\r\n";
             if(data->isBinary())
             {
@@ -88,7 +88,7 @@ namespace restcpp
      * 
      * @param fileName 
      */
-    void HTTPResponse::setBodyFile(const string& fileName)
+    void HTTPResponse::setBodyFile(const std::string& fileName)
     {
         try
         {
@@ -98,7 +98,7 @@ namespace restcpp
 
             if(file.good())
             {
-                stringstream stream;
+                std::stringstream stream;
                 stream << file.rdbuf();
                 m_requestBody = stream.str();
             }

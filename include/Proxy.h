@@ -20,12 +20,11 @@
 
 namespace restcpp
 {
-    using std::string;
 
     class Proxy
     {
         public:
-            Proxy(string address);
+            Proxy(std::string address);
             const HTTPResponse& getResponse() const { return m_response; };
 
         private:
@@ -37,8 +36,8 @@ namespace restcpp
             void m_initConnection();
             void m_sendRequest();
             void m_getResponse();
-            void m_parseAddress(string address);
-            string m_addressHead,m_addressTail;
+            void m_parseAddress(std::string address);
+            std::string m_addressHead,m_addressTail;
             short m_port;
     };
 }

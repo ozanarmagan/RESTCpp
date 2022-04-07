@@ -14,7 +14,7 @@ namespace restcpp
         res->addHeader("Server","RESTC++ Server v1.0");
         time_t currTime;
         time(&currTime);
-        string timeStr = ctime(&currTime);
+        std::string timeStr = ctime(&currTime);
         std::replace(timeStr.begin(),timeStr.end(),'\n','\0');
         timeStr = timeStr.substr(0, timeStr.find('\0'));
         res->addHeader("Date",timeStr);
@@ -31,10 +31,10 @@ namespace restcpp
     void Server::h_setOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Router& router)
     {
         res->setStatus(204);
-        string allowedMethods = "HEAD";
+        std::string allowedMethods = "HEAD";
         auto pos1 = req->getPath().find_first_of("/");
         auto pos2 = req->getPath().find_last_of("/");
-        string URLPath = req->getPath().substr(pos1, pos2 - pos1 + 1);
+        std::string URLPath = req->getPath().substr(pos1, pos2 - pos1 + 1);
         if(router.getStaticRoutes().find(URLPath) != router.getStaticRoutes().end())
         {
             res->addHeader("Allow","HEAD, GET");
@@ -63,7 +63,7 @@ namespace restcpp
      * @param router 
      * @return true if a static path found in router for given path
      */
-    bool Server::h_searchStaticRoutes(std::shared_ptr<HTTPResponse> res, string path,string fileName,Router& router)
+    bool Server::h_searchStaticRoutes(std::shared_ptr<HTTPResponse> res, std::string path,std::string fileName,Router& router)
     {
         bool hasFoundPath = false;
         bool hasFoundFile = false;
@@ -71,7 +71,7 @@ namespace restcpp
         {
             if(path == key)
             {
-                ifstream file(value + fileName);
+                std::ifstream file(value + fileName);
                 bool checkFile = file.is_open();
                 file.close();
                 if(checkFile && fileName != "")
@@ -101,7 +101,7 @@ namespace restcpp
      * @param router 
      * @return true if a dynamic route found for that path
      */
-    bool Server::h_searchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const string& path,const Router& router)
+    bool Server::h_searchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const std::string& path,const Router& router)
     {
         for(const auto& route : router.getDefinedRoutes())
         {
@@ -116,14 +116,14 @@ namespace restcpp
             else if(route.m_method == req->getMethod())
             {
                 
-                if(path.find(route.m_pathParams[0].m_path) == string::npos)
+                if(path.find(route.m_pathParams[0].m_path) == std::string::npos)
                     continue;
                 auto pathC = path;
                 
                 for(auto param : route.m_pathParams)
                 {
                     auto startPos = pathC.find(param.m_path);
-                    if(startPos == string::npos)
+                    if(startPos == std::string::npos)
                         break;
                     startPos +=  param.m_path.length();
                     size_t endPos = pathC.length();
@@ -158,8 +158,8 @@ namespace restcpp
         auto fullPath = req->getPath();
         auto pos1 = fullPath.find_first_of("/");
         auto pos2 = fullPath.find_last_of("/");
-        string URLPath = fullPath.substr(pos1, pos2 - pos1 + 1);
-        string fileName = fullPath.substr(pos2 + 1);
+        std::string URLPath = fullPath.substr(pos1, pos2 - pos1 + 1);
+        std::string fileName = fullPath.substr(pos2 + 1);
 
         if(h_searchStaticRoutes(res, URLPath, fileName,router))
             return;
@@ -202,7 +202,7 @@ namespace restcpp
 #endif
     }
 
-    void Server::h_sendToSocket(const SOCKET& sock,const string& message)
+    void Server::h_sendToSocket(const SOCKET& sock,const std::string& message)
     {
         size_t sent = 0,totalSent = 0;
         const char* buffer = message.c_str();
@@ -309,7 +309,7 @@ namespace restcpp
      */
     void Server::onRequest(SOCKET socket)
     {
-        const string reqData = recieveNext(m_acceptSocket);
+        const std::string reqData = recieveNext(m_acceptSocket);
         if(reqData == "")
             return;
         auto res = processRequest(reqData);
@@ -320,11 +320,11 @@ namespace restcpp
      * @brief Recieve request from socket
      * 
      * @param socket to listen
-     * @return const string raw request as string
+     * @return const std::string raw request as std::string
      */
-    const string Server::recieveNext(SOCKET socket)
+    const std::string Server::recieveNext(SOCKET socket)
     {
-        string rawData;
+        std::string rawData;
         char buffer[8192];
         uint8_t attempts = 0;
         try
@@ -353,11 +353,11 @@ namespace restcpp
                     break;
                 
                 totalRecieved += recieveLength; 
-                rawData += string(buffer,recieveLength);
+                rawData += std::string(buffer,recieveLength);
 
                 if(totalRecieved > 32)
                 {
-                    if(rawData.find("Content-Length") == string::npos && contentLength == 0)
+                    if(rawData.find("Content-Length") == std::string::npos && contentLength == 0)
                         break;
                     else
                     {
@@ -367,7 +367,7 @@ namespace restcpp
                             auto lengthStr = rawData.substr(pos + 16, rawData.find_first_of("\r",pos) - pos - 16);
                             contentLength = std::stoi(lengthStr);
                         }
-                        if(rawData.find("\r\n\r\n") != string::npos && recieveLengthBeforeBody == -1)
+                        if(rawData.find("\r\n\r\n") != std::string::npos && recieveLengthBeforeBody == -1)
                         {
                             recieveLengthBeforeBody = rawData.find("\r\n\r\n") + 4;
                         }
@@ -378,7 +378,7 @@ namespace restcpp
                 }
             }
         }
-        catch (runtime_error ex)
+        catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\n Exception on recieve";
         }
@@ -393,7 +393,7 @@ namespace restcpp
      * @param rawData 
      * @return std::shared_ptr<HTTPResponse> pointer to parsed HTTPResponse object
      */
-    std::shared_ptr<HTTPResponse> Server::processRequest(const string& rawData)
+    std::shared_ptr<HTTPResponse> Server::processRequest(const std::string& rawData)
     {   
 
         auto res = std::make_shared<HTTPResponse>();
@@ -417,7 +417,7 @@ namespace restcpp
             
             h_processRouter(req,res,m_router);
         }
-        catch (runtime_error ex)
+        catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\n Exception on proccess request";
         }
@@ -439,7 +439,7 @@ namespace restcpp
 
             h_closeSocket(sock);
         }
-        catch (runtime_error ex)
+        catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\n Exception on send response";
         }

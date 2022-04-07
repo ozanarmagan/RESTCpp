@@ -29,15 +29,7 @@
 
 namespace restcpp
 {
-    using std::function;
-    using std::unique_ptr;
-    using std::thread;
-    using std::time;
-    using std::ctime;
-    using std::ifstream;
-    using std::stringstream;
-    using std::memcpy;
-    using std::memset;
+
     /**
      * @brief Main class for server 
      * 
@@ -46,8 +38,8 @@ namespace restcpp
     {
         public:
             Server(uint16_t port = 8080) : m_port(port),m_router() { init(); };
-            void addRoute(const string& URLPath, const METHOD& method, const function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { m_router.m_routes.push_back(Router::route(URLPath, method, callBack)); };
-            void addStaticRoute(string URLPath, string folderPath) { m_router.m_staticRoutes[URLPath] = folderPath; };
+            void addRoute(const std::string& URLPath, const METHOD& method, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { m_router.m_routes.push_back(Router::route(URLPath, method, callBack)); };
+            void addStaticRoute(std::string URLPath, std::string folderPath) { m_router.m_staticRoutes[URLPath] = folderPath; };
             void run();
             void stop();
             void setLogging(bool value) { m_log = value; };
@@ -59,16 +51,16 @@ namespace restcpp
             Router m_router;
             void init();
             void onRequest(SOCKET socket);
-            const string recieveNext(SOCKET socket);
-            std::shared_ptr<HTTPResponse> processRequest(const string& rawData);
+            const std::string recieveNext(SOCKET socket);
+            std::shared_ptr<HTTPResponse> processRequest(const std::string& rawData);
             static void sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock);
             static void h_setMainHeaders(std::shared_ptr<HTTPResponse> res);
             static void h_setOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Router& router);
-            static bool h_searchStaticRoutes(std::shared_ptr<HTTPResponse> res, string path,string fileName,Router& router);
-            static bool h_searchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const string& path,const Router& router);
+            static bool h_searchStaticRoutes(std::shared_ptr<HTTPResponse> res, std::string path,std::string fileName,Router& router);
+            static bool h_searchDefinedRoutes(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, const std::string& path,const Router& router);
             static void h_processRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, Router& router);
             static void h_closeSocket(const SOCKET& sock);
-            static void h_sendToSocket(const SOCKET& sock,const string& message);
+            static void h_sendToSocket(const SOCKET& sock,const std::string& message);
     };
 
 }

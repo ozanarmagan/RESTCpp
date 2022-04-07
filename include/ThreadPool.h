@@ -10,13 +10,7 @@
 
 namespace restcpp
 {
-    using std::function;
-    using std::vector;
-    using std::thread;
-    using std::queue;
-    using std::mutex;
-    using std::condition_variable;
-    using std::future;
+
     /**
      * @brief Thread pool implementation to support multiple clients by multithreading
      * 
@@ -24,16 +18,16 @@ namespace restcpp
     class ThreadPool
     {
         public:
-            ThreadPool(int n) { m_threads.resize(n); for(int i = 0;i < n;i++) m_threads[i] = thread(PoolWorker(this)); }
+            ThreadPool(int n) { m_threads.resize(n); for(int i = 0;i < n;i++) m_threads[i] = std::thread(PoolWorker(this)); }
             template <typename T,typename... Args>
             auto enqueue(T f,Args&&... args)
             {
                 using funcType = decltype(f(args...))();
-                function<funcType> func = std::bind<void>(std::forward<T>(f), std::forward<Args>(args)...);
+                std::function<funcType> func = std::bind<void>(std::forward<T>(f), std::forward<Args>(args)...);
                 auto taskPtr = std::make_shared<std::packaged_task<funcType>>(func);
                 if(!m_shutDown)
                 {
-                    std::unique_lock<mutex> lock(m_mutex);
+                    std::unique_lock<std::mutex> lock(m_mutex);
                     m_jobs.emplace([taskPtr]() {(*taskPtr)(); });
                     m_condition.notify_one();
                 }
@@ -50,9 +44,9 @@ namespace restcpp
                         
                         while(!m_pool->m_shutDown)
                         {
-                            function<void()> f;
+                            std::function<void()> f;
                             {
-                                std::unique_lock<mutex> lock(m_pool->m_mutex);
+                                std::unique_lock<std::mutex> lock(m_pool->m_mutex);
                                 if(m_pool->m_jobs.empty())
                                 {
                                     if(m_pool->m_shutDown)
@@ -70,9 +64,9 @@ namespace restcpp
             };
             friend class PoolWorker;
             bool m_shutDown = false;
-            mutex m_mutex;
-            condition_variable m_condition;
-            vector<thread> m_threads;
-            queue<function<void()>> m_jobs;
+            std::mutex m_mutex;
+            std::condition_variable m_condition;
+            std::vector<std::thread> m_threads;
+            std::queue<std::function<void()>> m_jobs;
     };
     }

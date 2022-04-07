@@ -8,7 +8,6 @@
 
 namespace restcpp
 {
-    using std::string;
     /**
      * @brief Class to store form data as seperate objects and add to requests or responses.Stored data can be both text or binary
      * 
@@ -16,21 +15,21 @@ namespace restcpp
     class FormData
     {
         public:
-            FormData(string name, string fileName, string textData, string contentType = "") : m_fileName(fileName),m_name(name),m_textData(textData),m_contentType(contentType) { m_isBinary = false; };
-            FormData(string name, string fileName, std::shared_ptr<byte> binaryData, string contentType = "") : m_fileName(fileName),m_name(name),m_binaryData(binaryData),m_contentType(contentType) { m_isBinary = true; };
-            const string getFileName() const { return m_fileName; };
-            const string getName() const { return m_name; };
-            const string getTextData() const { return m_textData; };
-            const string getContentType() const { return m_contentType; };
+            FormData(std::string name, std::string fileName, std::string textData, std::string contentType = "") : m_fileName(fileName),m_name(name),m_textData(textData),m_contentType(contentType) { m_isBinary = false; };
+            FormData(std::string name, std::string fileName, std::shared_ptr<byte> binaryData, std::string contentType = "") : m_fileName(fileName),m_name(name),m_binaryData(binaryData),m_contentType(contentType) { m_isBinary = true; };
+            const std::string getFileName() const { return m_fileName; };
+            const std::string getName() const { return m_name; };
+            const std::string getTextData() const { return m_textData; };
+            const std::string getContentType() const { return m_contentType; };
             const byte* getBinaryData() const { return m_binaryData.get(); };
             const size_t getBinaryDataLength() const { return m_binaryDataLength; };
             const bool isBinary() const { return m_isBinary; };
-            string serialize(bool isMultiPart = true);
+            std::string serialize(bool isMultiPart = true);
         private:
-            string m_fileName;
-            string m_name;
-            string m_textData;
-            string m_contentType;
+            std::string m_fileName;
+            std::string m_name;
+            std::string m_textData;
+            std::string m_contentType;
             bool m_isBinary;
             std::shared_ptr<byte> m_binaryData;
             size_t m_binaryDataLength;
