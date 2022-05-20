@@ -26,6 +26,7 @@
 #include "HTTPResponse.h"
 #include "ThreadPool.h"
 #include "Router.h"
+#include "Proxy.h"
 
 namespace restcpp
 {
@@ -37,7 +38,8 @@ namespace restcpp
     class Server
     {
         public:
-            Server(uint16_t port = 8080) : m_port(port),m_router() { init(); };
+            Server(const uint16_t& port = 8080) : m_port(port),m_router() { init(); };
+            Server(const std::string& certFilePath, const std::string& pemFilePath, const uint16_t& port = 8080){   };
             void addRoute(const std::string& URLPath, const METHOD& method, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { m_router.m_routes.push_back(Router::route(URLPath, method, callBack)); };
             void addStaticRoute(std::string URLPath, std::string folderPath) { m_router.m_staticRoutes[URLPath] = folderPath; };
             void run();
@@ -45,14 +47,16 @@ namespace restcpp
             void setLogging(bool value) { m_log = value; };
         private:
             SOCKET m_sock,m_acceptSocket;
-            struct sockaddr_in m_serverAddr;
+            sockaddr_in m_serverAddr;
             bool m_log; 
+            bool m_https;
             uint16_t m_port;
             Router m_router;
             void init();
             void onRequest(SOCKET socket);
             const std::string recieveNext(SOCKET socket);
             std::shared_ptr<HTTPResponse> processRequest(const std::string& rawData);
+            std::string certFile,pemFile;
             static void sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock);
             static void h_setMainHeaders(std::shared_ptr<HTTPResponse> res);
             static void h_setOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Router& router);
@@ -61,6 +65,7 @@ namespace restcpp
             static void h_processRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, Router& router);
             static void h_closeSocket(const SOCKET& sock);
             static void h_sendToSocket(const SOCKET& sock,const std::string& message);
+
     };
 
 }

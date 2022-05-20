@@ -91,6 +91,7 @@ namespace restcpp
         }
         return hasFoundPath;
     }
+    
 
     /**
      * @brief Function to search dynamic routes

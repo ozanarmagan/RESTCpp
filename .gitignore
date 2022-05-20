@@ -15,6 +15,7 @@
 *.lib
 *.exe
 *.out
+*.pdf
 **/cmake-build-debug
 **/CMakeCache.txt
 **/cmake_install.cmake
@@ -34,3 +35,4 @@ build/run/*
 build/logs/&
 .bash/
 .vscode
+root/

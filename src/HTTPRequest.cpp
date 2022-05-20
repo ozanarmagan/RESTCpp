@@ -96,6 +96,9 @@ namespace restcpp
         }
     }
 
+
+
+
     /**
      * @brief Construct a new HTTPRequest::HTTPRequest object
      * 
@@ -171,8 +174,26 @@ namespace restcpp
                 if(pos != std::string::npos)
                 {
                     auto key = vec[i].substr(1,pos - 1);
-                    auto val = vec[i].substr(pos + 1, vec[i].length() - pos - 1);
-                    m_headers[key] = val;
+                    if(key == "Cookie")
+                    {
+                        auto val = vec[i].substr(pos + 1, vec[i].length() - pos - 1);
+                        std::vector<std::string> cookies = splitByChar(val,';');
+                        for(auto& cookie : cookies)
+                        {
+                            auto pos2 = cookie.find("=");
+                            if(pos2 != std::string::npos)
+                            {
+                                auto key = cookie.substr(0,pos2);
+                                auto val = cookie.substr(pos2 + 1, cookie.length() - pos2 - 1);
+                                m_cookies[key] = val;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        auto val = vec[i].substr(pos + 1, vec[i].length() - pos - 1);
+                        m_headers[key] = val;
+                    }
                 }
             }
 

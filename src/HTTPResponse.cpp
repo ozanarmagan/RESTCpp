@@ -21,6 +21,39 @@ namespace restcpp
             return res;
         }
     }
+
+    /* Serialize cookies to string */
+    const std::string HTTPResponse::serializeCookies() const
+    {
+        std::string res;
+        for(auto& cookie : m_cookies)
+        {
+            res += "Set-Cookie: " + cookie.getKey() + "=" + cookie.getValue() + "; ";
+            if(cookie.getPath() != "")
+            {
+                res += "Path=" + cookie.getPath() + "; ";
+            }
+            if(cookie.getDomain() != "")
+            {
+                res += "Domain=" + cookie.getDomain() + "; ";
+            }
+            if(cookie.getExpires() != "")
+            {
+                res += "Expires=" + cookie.getExpires() + "; ";
+            }
+            if(cookie.isSecure())
+            {
+                res += "Secure; ";
+            }
+            if(cookie.isHttpOnly())
+            {
+                res += "HttpOnly; ";
+            }
+            res += "\r\n";
+        }
+        return res;
+    }
+
     /**
      * @brief Serialize response into std::string 
      * 
@@ -36,6 +69,7 @@ namespace restcpp
             res += std::to_string(m_statusCode) + " " + statusDesc + "\r\n";
             for(auto& [key,value] : m_headers)
                 res += key + ": " + value + "\r\n";
+            res += serializeCookies();
             if(m_requestBody.length() > 0)
                 res += "Content-Length: " + std::to_string(m_requestBody.length());
             if(m_requestBody.length() > 0 && !m_headerOnly)

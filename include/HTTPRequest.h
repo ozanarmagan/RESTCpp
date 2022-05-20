@@ -30,14 +30,16 @@ namespace restcpp
             const time_t& getRequestTime() const { return m_time; }
             const std::string getUserAgent() const { if(m_headers.count("User-Agent")) return m_headers.at("User-Agent"); else return ""; }
             const std::string getHostName()  const { if(m_headers.count("Host")) return m_headers.at("Host"); else return ""; }
-            const std::string& getPath() const { return m_path; }
-            const std::unordered_map<std::string,std::string> getHeadersAll() const { return m_headers; }
-            const std::unordered_map<std::string,std::string> getQueriesAll() const { return m_queries; }
-            const std::unordered_map<std::string,std::string> getParamsAll()  const { return m_pathParams; }
+            const std::string getPath() const { return m_path; }
+            const std::unordered_map<std::string,std::string>& getHeadersAll() const { return m_headers; }
+            const std::unordered_map<std::string,std::string>& getQueriesAll() const { return m_queries; }
+            const std::unordered_map<std::string,std::string>& getParamsAll()  const { return m_pathParams; }
+            const std::unordered_map<std::string,std::string>& getCookiesAll() const { return m_cookies; }
             const std::string getHeader(const std::string& header) const { if(m_headers.count(header)) return m_headers.at(header); else return ""; }
             const std::string getQuery(const std::string& query) const { if(m_queries.count(query)) return m_queries.at(query);  else return "";}
             const std::string getParam(const std::string& param) const { if(m_pathParams.count(param)) return m_pathParams.at(param); else return ""; }
             const std::vector<FormData> getFormData() const { return m_formData; }
+            const std::string getCookie (const std::string& cookie) const { if(m_cookies.count(cookie)) return m_cookies.at(cookie); else return ""; }
             void setMethod(const METHOD& method) { m_method = method; } 
             void setHTTPVersion(const HTTP_VERSION& version) { m_requestVersion = version; } 
             void setRequestTime(const time_t& time) { m_time = time; } 
@@ -59,6 +61,7 @@ namespace restcpp
             std::vector<FormData> m_formData;
             std::unordered_map<std::string,std::string> m_headers;
             std::unordered_map<std::string,std::string> m_pathParams;
+            std::unordered_map<std::string,std::string> m_cookies;
             byte* m_rawBodyData;
     };
 }
