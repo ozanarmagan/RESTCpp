@@ -20,6 +20,7 @@
 #include <string>
 #include <tuple>
 #include <cstring>
+#include <filesystem>
 
 #include "Common.h"
 #include "HTTPRequest.h"
@@ -41,7 +42,12 @@ namespace restcpp
             Server(const uint16_t& port = 8080) : m_port(port),m_router() { init(); };
             Server(const std::string& certFilePath, const std::string& pemFilePath, const uint16_t& port = 8080){   };
             void addRoute(const std::string& URLPath, const METHOD& method, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { m_router.m_routes.push_back(Router::route(URLPath, method, callBack)); };
-            void addStaticRoute(std::string URLPath, std::string folderPath) { m_router.m_staticRoutes[URLPath] = folderPath; };
+            void addStaticRoute(std::string URLPath, std::string folderPath) {
+                 m_router.m_staticRoutes[URLPath] = folderPath;
+                 for(const auto& p : std::filesystem::directory_iterator(folderPath))
+                    if(p.is_directory())
+                        addStaticRoute(URLPath + p.path().filename().string() + "/", p.path().string() + "/");
+             };
             void run();
             void stop();
             void setLogging(bool value) { m_log = value; };

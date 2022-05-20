@@ -16,6 +16,7 @@ endif()
 
 if(WIN32)
     target_link_libraries(restcpp wsock32)
+    target_link_libraries(restcpp stdc++fs)
 else()
     target_link_libraries(restcpp pthread)
 endif()

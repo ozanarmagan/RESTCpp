@@ -6,7 +6,7 @@ OBJ = $(SRC:.cc=.o)
 EXEC = restcpp
 
 ifeq ($(OS),Windows_NT) 
-	LBLIBS = -lwsock32
+	LBLIBS = -lwsock32 -lstdc++fs
 else
 	LBLIBS = -pthread
 endif

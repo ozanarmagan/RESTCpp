@@ -32,3 +32,12 @@ void proxyTest(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 {
     res = restcpp::Proxy("google.com").getResponse();
 }
+
+void react(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
+{
+    std::ifstream file("./root/index.html");
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string content = buffer.str();
+    res.setBodyHTML(content);
+}

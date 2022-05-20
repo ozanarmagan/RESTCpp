@@ -14,7 +14,7 @@ int main()
     server.addRoute("/greeting2/",restcpp::METHOD::GET,[](const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res) { res.setBodyText("Greetings!"); });
     server.addRoute("/proxytest/", restcpp::METHOD::GET, proxyTest);
     server.addRoute("/cookietest/", restcpp::METHOD::GET, testSetCookie);
-    std::thread t1(&restcpp::Server::run,&server);
-    t1.join();
+    server.addRoute("/react/", restcpp::METHOD::GET, react);
+    server.run();
 
 }
