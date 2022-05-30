@@ -1,5 +1,8 @@
 #pragma once
 
+
+#include <ctime>
+
 #include "Common.h"
 
 namespace restcpp
@@ -8,7 +11,7 @@ namespace restcpp
     {
         public:
             Cookie() {};
-            Cookie(const std::string& key, const std::string& value, const std::string& path, const std::string& domain, const std::string& expires, const bool& secure, const bool& httpOnly)
+            Cookie(const std::string& key, const std::string& value, const std::string& path, const std::string& domain, const std::time_t& expires, const bool& secure, const bool& httpOnly)
             {
                 m_key = key;
                 m_value = value;
@@ -18,7 +21,7 @@ namespace restcpp
                 m_secure = secure;
                 m_httpOnly = httpOnly;
             };
-            Cookie(const std::string& key, const std::string& value, const std::string& path, const std::string& domain, const std::string& expires, const bool& secure)
+            Cookie(const std::string& key, const std::string& value, const std::string& path, const std::string& domain, const std::time_t& expires, const bool& secure)
             {
                 m_key = key;
                 m_value = value;
@@ -27,7 +30,7 @@ namespace restcpp
                 m_expires = expires;
                 m_secure = secure;
             };
-            Cookie(const std::string& key, const std::string& value, const std::string& path, const std::string& domain, const std::string& expires)
+            Cookie(const std::string& key, const std::string& value, const std::string& path, const std::string& domain, const std::time_t& expires)
             {
                 m_key = key;
                 m_value = value;
@@ -61,14 +64,22 @@ namespace restcpp
             const std::string getValue() const { return m_value; };
             const std::string getPath() const { return m_path; };
             const std::string getDomain() const { return m_domain; };
-            const std::string getExpires() const { return m_expires; };
+            const std::string getExpiresStr() const {   if(m_expires) {
+                                                                        std::tm *ptm = std::gmtime(&m_expires);
+                                                                        char buffer[128]; 
+                                                                        strftime(buffer, 128, "%a, %d %b %Y %H:%M:%S", ptm); 
+                                                                        return std::string(buffer);
+                                                                    } 
+                                                                    else
+                                                                        return ""; };
+            const std::time_t getExpires() const { return m_expires; };
             const bool isSecure() const { return m_secure; };
             const bool isHttpOnly() const { return m_httpOnly; };
             void setKey(const std::string& key) { m_key = key; };
             void setValue(const std::string& value) { m_value = value; };
             void setPath(const std::string& path) { m_path = path; };
             void setDomain(const std::string& domain) { m_domain = domain; };
-            void setExpires(const std::string& expires) { m_expires = expires; };
+            void setExpires(const std::time_t& expires) { m_expires = expires; };
             void setSecure(const bool& secure) { m_secure = secure; };
             void setHttpOnly(const bool& httpOnly) { m_httpOnly = httpOnly; };
             friend bool operator<(const Cookie& lhs, const Cookie& rhs)
@@ -80,7 +91,7 @@ namespace restcpp
             std::string m_value;
             std::string m_path;
             std::string m_domain;
-            std::string m_expires;
+            std::time_t m_expires;
             bool m_secure = false;
             bool m_httpOnly = false;
     };

@@ -316,7 +316,6 @@ namespace restcpp
         {"crt","application/x-x509-user-cert"},
         {"csh","application/x-csh"},
         {"csh","text/x-script.csh"},
-        {"css","application/x-pointplus"},
         {"css","text/css"},
         {"cxx","text/plain"},
         {"dcr","application/x-director"},
@@ -877,4 +876,26 @@ namespace restcpp
         {"zoo","application/octet-stream"},
         {"zsh","text/x-script.zsh"},
     };
+
+
+    /* Function to generate UUID */
+    inline const std::string generateUUID()
+    {
+        std::string uuid;
+        uuid.reserve(36);
+        uuid.append("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx");
+        for (int i = 0; i < 36; i++)
+        {
+            if (uuid[i] == 'x')
+            {
+                uuid[i] = '0' + (rand() % 9);
+            }
+            else if (uuid[i] == 'y')
+            {
+                uuid[i] = '0' + (rand() % 4);
+            }
+        }
+        return uuid;
+    }
+
 }

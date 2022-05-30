@@ -10,6 +10,7 @@
 #include "Common.h"
 #include "FormData.h"
 #include "Router.h"
+#include "Session.h"
 
 namespace restcpp
 {
@@ -40,6 +41,7 @@ namespace restcpp
             const std::string getParam(const std::string& param) const { if(m_pathParams.count(param)) return m_pathParams.at(param); else return ""; }
             const std::vector<FormData> getFormData() const { return m_formData; }
             const std::string getCookie (const std::string& cookie) const { if(m_cookies.count(cookie)) return m_cookies.at(cookie); else return ""; }
+            const std::string& getSessionID() const { return m_sessionID; }
             void setMethod(const METHOD& method) { m_method = method; } 
             void setHTTPVersion(const HTTP_VERSION& version) { m_requestVersion = version; } 
             void setRequestTime(const time_t& time) { m_time = time; } 
@@ -50,6 +52,7 @@ namespace restcpp
             void setQuery(const std::string& key, const std::string& value) {  m_queries[key] = value; }
             void setParam(const std::string& key, const std::string& value) {  m_pathParams[key] = value; }
             void setFormData(FormData form) { m_formData.push_back(form); }
+    
         private:
             friend class Server;
             METHOD m_method;
@@ -63,5 +66,6 @@ namespace restcpp
             std::unordered_map<std::string,std::string> m_pathParams;
             std::unordered_map<std::string,std::string> m_cookies;
             byte* m_rawBodyData;
+            std::string m_sessionID;
     };
 }

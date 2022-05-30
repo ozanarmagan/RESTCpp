@@ -37,9 +37,9 @@ namespace restcpp
             {
                 res += "Domain=" + cookie.getDomain() + "; ";
             }
-            if(cookie.getExpires() != "")
+            if(cookie.getExpiresStr() != "")
             {
-                res += "Expires=" + cookie.getExpires() + "; ";
+                res += "Expires=" + cookie.getExpiresStr() + "; ";
             }
             if(cookie.isSecure())
             {

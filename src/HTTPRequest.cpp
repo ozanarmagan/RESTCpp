@@ -177,6 +177,7 @@ namespace restcpp
                     if(key == "Cookie")
                     {
                         auto val = vec[i].substr(pos + 1, vec[i].length() - pos - 1);
+                        val.erase(val.begin(), std::find_if(val.begin(), val.end(), std::bind1st(std::not_equal_to<char>(), ' ')));
                         std::vector<std::string> cookies = splitByChar(val,';');
                         for(auto& cookie : cookies)
                         {
@@ -185,7 +186,10 @@ namespace restcpp
                             {
                                 auto key = cookie.substr(0,pos2);
                                 auto val = cookie.substr(pos2 + 1, cookie.length() - pos2 - 1);
-                                m_cookies[key] = val;
+                                if(key == "sessionid")
+                                    m_sessionID = val;
+                                else
+                                    m_cookies[key] = val;
                             }
                         }
                     }

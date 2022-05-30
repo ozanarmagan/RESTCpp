@@ -4,7 +4,10 @@
 
 #include "../include/Server.h"
 #include "../include/Proxy.h"
+#include "../include/SessionManager.h"
 
+
+restcpp::SessionManager sessionManager;
 
 bool isNumber(const std::string& str)
 {
@@ -16,6 +19,7 @@ bool isNumber(const std::string& str)
 
     return true;
 }
+
 
 
 void testParams(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
@@ -33,11 +37,26 @@ void proxyTest(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
     res = restcpp::Proxy("google.com").getResponse();
 }
 
-void react(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
+
+void sessionTest(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 {
-    std::ifstream file("./root/index.html");
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string content = buffer.str();
-    res.setBodyHTML(content);
+    std::string sessionID = req.getSessionID();
+    if(sessionID.empty() || !sessionManager.getSession(sessionID))
+    {
+        restcpp::Session* session = sessionManager.addSession(restcpp::generateUUID());
+
+        session->setData("viewCount",1);
+
+        std::cout << "Session EXPIRES: " << session->toCookie().getExpires() << std::endl;
+
+        res.setBodyHTML("<html><body><h1>Session test</h1><p>Session ID: " + session->getSessionID() + "</p><p>View Count: " + std::to_string(session->getData<int>("viewCount")) + "</p><p>Expire Time: " + session->getExpiresStr() + "</p></body></html>");
+
+        res.addCookie(session->toCookie());
+    }
+    else
+    {
+        restcpp::Session* session = sessionManager.getSession(sessionID);
+        session->setData("viewCount",session->getData<int>("viewCount") + 1);
+        res.setBodyHTML("<html><body><h1>Session test</h1><p>Session ID: " + session->getSessionID() + "</p><p>View Count: " + std::to_string(session->getData<int>("viewCount")) + "</p><p>Expire Time: " + session->getExpiresStr() + "</p></body></html>");
+    }
 }
