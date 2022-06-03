@@ -60,3 +60,44 @@ void sessionTest(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
         res.setBodyHTML("<html><body><h1>Session test</h1><p>Session ID: " + session->getSessionID() + "</p><p>View Count: " + std::to_string(session->getData<int>("viewCount")) + "</p><p>Expire Time: " + session->getExpiresStr() + "</p></body></html>");
     }
 }
+
+
+// Test queries
+void testQuery(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
+{
+    auto q = req.getQueriesAll();
+    std::stringstream ss;
+    ss << "<html><body><h1>Query test</h1>";
+    for(auto& qq: q)
+    {
+        ss << "<p>" << qq.first << ": " << qq.second << "</p>";
+    }
+    ss << "</body></html>";
+    res.setBodyHTML(ss.str());
+}
+
+
+void testFileUpload(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
+{
+    std::stringstream ss;
+    ss << "<html><body><h1>File upload test</h1>";
+    std::cout << "File upload test" << std::endl;
+    for(auto& formData : req.getFormData())
+    {
+        if(formData.isBinary())
+        {
+            ss << "<p>File: " << formData.getFileName() << "</p>";
+            ss << "<p>Size: " << formData.getBinaryDataLength() << "</p>";
+            ss << "<p>Content type: " << formData.getContentType() << "</p>";
+            std::ofstream file("./root/" + formData.getFileName(), std::ios::binary);
+            file.write((char*)formData.getBinaryData(), formData.getBinaryDataLength());
+            file.close();
+        }
+        else
+        {
+            ss << "<p>Text: " << formData.getTextData() << "</p>";
+        }
+    }
+    ss << "</body></html>";
+    res.setBodyHTML(ss.str());
+}

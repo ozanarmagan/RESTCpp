@@ -23,7 +23,11 @@ namespace restcpp
 	{
         std::string req = "GET /" + m_addressTail + " HTTP/1.1\r\nHost: " + m_addressHead  +  "\r\nAccept: */*\r\nUser-Agent: RESTC++ Client v1.0\r\n\r\n";
         send(m_socket,req.c_str(),req.length(),0);
+#ifdef _WIN32
 		shutdown(m_socket, SD_SEND);  
+#else
+		shutdown(m_socket, SHUT_WR);
+#endif
 	}
 	
 	/**
@@ -50,7 +54,8 @@ namespace restcpp
 #ifdef _WIN32
         closesocket(m_socket);
 #else
-                closesocket(m_socket); 
+		shutdown(m_socket, SHUT_RDWR);
+		close(m_socket); 
 #endif
 
 		m_response.setStatus(std::stoi(res.substr(res.find(" ") + 1,3)));
@@ -107,9 +112,11 @@ namespace restcpp
             closesocket(m_socket);
 			WSACleanup();
 #else
-			closesocket(m_socket); 
+			shutdown(m_socket, SHUT_RDWR);
+			close(m_socket); 
 #endif
-            std::cout << "Error while initilazing socket for proxy request\nError:" + WSAGetLastError();
+
+            std::cout << "Error while initilazing socket for proxy request\n";
         }
 	}
 

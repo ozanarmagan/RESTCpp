@@ -15,6 +15,8 @@ int main()
     server.addRoute("/proxytest/", restcpp::METHOD::GET, proxyTest);
     server.addRoute("/cookietest/", restcpp::METHOD::GET, testSetCookie);
     server.addRoute("/sessiontest/", restcpp::METHOD::GET, sessionTest);
+    server.addRoute("/querytest/", restcpp::METHOD::GET, testQuery);
+    server.addRoute("/fileupload/", restcpp::METHOD::POST, testFileUpload);
     server.run();
 
 }

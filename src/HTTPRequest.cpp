@@ -223,7 +223,7 @@ namespace restcpp
                         {
                             auto pos = obj.find("Content-Type:") + 14;
                             contentType = obj.substr(pos,obj.find("\r\n",pos) - pos);
-                            isBinary = contentType.find("text/") == std::string::npos;
+                            isBinary = (contentType.find("text/") == std::string::npos);
                         }
 
                         if(obj.find("filename=") != std::string::npos)
@@ -236,14 +236,13 @@ namespace restcpp
                         name = obj.substr(pos,obj.find("\"",pos) - pos);
 
                         data = obj.substr(obj.find("\r\n\r\n") + 4);
-
                         if(!isBinary)
                             m_formData.push_back(FormData(name, fileName, data, contentType));
                         else
                         {
-                            std::shared_ptr<byte> byteArray = std::make_shared<byte>(data.length()); 
-                            memcpy(byteArray.get(), data.c_str(), sizeof(byte) * data.length());
-                            m_formData.push_back(FormData(name, fileName, byteArray, contentType));
+                            byte* byteArray = new byte[data.length()];; 
+                            memcpy(byteArray, data.c_str(), sizeof(byte) * data.length());
+                            m_formData.push_back(FormData(name, fileName, byteArray, data.length(), contentType));
                         }
 
                         
