@@ -62,6 +62,7 @@ namespace restcpp
             void onRequest(SOCKET socket);
             const std::string recieveNext(SOCKET socket);
             std::shared_ptr<HTTPResponse> processRequest(const std::string& rawData);
+            std::shared_ptr<HTTPRequest> lastRequest;
             std::string certFile,pemFile;
             static void sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock);
             static void h_setMainHeaders(std::shared_ptr<HTTPResponse> res);

@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <functional>
 #include "Common.h"
 #include "FormData.h"
 #include "Router.h"
@@ -52,7 +53,7 @@ namespace restcpp
             void setQuery(const std::string& key, const std::string& value) {  m_queries[key] = value; }
             void setParam(const std::string& key, const std::string& value) {  m_pathParams[key] = value; }
             void setFormData(FormData form) { m_formData.push_back(form); }
-    
+            bool parseRequest(const std::string& data);
         private:
             friend class Server;
             METHOD m_method;

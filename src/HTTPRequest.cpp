@@ -38,7 +38,6 @@ namespace restcpp
         {
             std::vector<std::string> splittedStrings = {};
             size_t pos = 0;
-
             while ((pos = str.find(delimeter)) != std::string::npos)
             {
                 std::string token = str.substr(0, pos);
@@ -96,15 +95,7 @@ namespace restcpp
         }
     }
 
-
-
-
-    /**
-     * @brief Construct a new HTTPRequest::HTTPRequest object
-     * 
-     * @param data raw data to parse and create HTTPRequest object
-     */
-    HTTPRequest::HTTPRequest(const std::string& data)
+    bool HTTPRequest::parseRequest(const std::string& data)
     {
         try
         {
@@ -132,6 +123,13 @@ namespace restcpp
                 m_method = METHOD::HEAD;
             else if(methodStr == "OPTIONS")
                 m_method = METHOD::OPTIONS;
+            else if(methodStr == "TRACE")
+                m_method = METHOD::TRACE;
+            else if(methodStr == "CONNECT")
+                m_method = METHOD::CONNECT;
+            else
+                return false;
+            
 
             cursor = data.find_first_of(" ",cursorPrev);
             m_path = data.substr(cursorPrev,cursor - cursorPrev);
@@ -202,12 +200,32 @@ namespace restcpp
             }
 
             if(m_headers["Content-Length"] != "")
+                for(const char& c : m_headers["Content-Length"])
+                    if(c < '0' || c > '9')
+                        return false;
+
+            if(m_headers["Content-Length"] != "")
             {
                 if(m_headers["Content-Type"].find("multipart/form-data") != std::string::npos)
                 {
+                    std::string body = data.substr(data.find("\r\n\r\n") + 4);
+                    if(m_headers["Transfer-Encoding"] == "chunked")
+                    {
+                        std::string ans;
+                        std::vector<std::string> chunks = splitByStr(body,"\r\n");
+                        bool isEven = false;
+                        for(auto& chunk : chunks)
+                        {
+                            if(isEven)
+                                ans += chunk;
+                            isEven = !isEven;
+                        }
+
+                        body = ans;
+                    }
                     std::string contentType = m_headers["Content-Type"];
                     std::string boundary = contentType.substr(contentType.find("boundary=") + 9);
-                    std::string body = data.substr(data.find("--" + boundary));
+                    body = body.substr(body.find("--" + boundary));
                     std::vector<std::string> form = splitByStr(body,"--" + boundary);
                     form.pop_back();
 
@@ -235,23 +253,35 @@ namespace restcpp
                         auto pos = obj.find("name=") + 6;
                         name = obj.substr(pos,obj.find("\"",pos) - pos);
 
-                        data = obj.substr(obj.find("\r\n\r\n") + 4);
+                        auto formDataVal = obj.substr(obj.find("\r\n\r\n") + 4);
                         if(!isBinary)
-                            m_formData.push_back(FormData(name, fileName, data, contentType));
+                            m_formData.push_back(FormData(name, fileName, formDataVal, contentType));
                         else
                         {
-                            byte* byteArray = new byte[data.length()];; 
-                            memcpy(byteArray, data.c_str(), sizeof(byte) * data.length());
-                            m_formData.push_back(FormData(name, fileName, byteArray, data.length(), contentType));
+                            byte* byteArray = new byte[formDataVal.length()];; 
+                            memcpy(byteArray, formDataVal.c_str(), sizeof(byte) * formDataVal.length());
+                            m_formData.push_back(FormData(name, fileName, byteArray, formDataVal.length(), contentType));
                         }
-
-                        
                     }
                 }
 
                 else if(m_headers["Content-Type"].find("application/x-www-form-urlencoded") != std::string::npos)
                 {
                     std::string body = data.substr(data.find("\r\n\r\n") + 4);
+                    if(m_headers["Transfer-Encoding"] == "chunked")
+                    {
+                        std::string ans;
+                        std::vector<std::string> chunks = splitByStr(body,"\r\n");
+                        bool isEven = false;
+                        for(auto& chunk : chunks)
+                        {
+                            if(isEven)
+                                ans += chunk;
+                            isEven = !isEven;
+                        }
+
+                        body = ans;
+                    }
                     body = decodeUri(body.c_str());
                     std::vector<std::string> objects = splitByChar(body,'&');
                     for(auto& object : objects)
@@ -265,16 +295,55 @@ namespace restcpp
 
                 else
                 {
-                    std::string body = data.substr(data.find("\r\n\r\n") + 4);
-                    auto m_rawBodyData =  std::make_unique<byte>(body.length());
-                    memcpy(m_rawBodyData.get(), body.c_str(), sizeof(byte) * body.length());
+                    if(m_headers["Transfer-Encoding"] != "chunked")
+                    {
+                        std::string body = data.substr(data.find("\r\n\r\n") + 4);
+                        memccpy(m_rawBodyData, body.c_str(), 0, body.length());
+                    }
+                    else
+                    {
+                        std::string body = data.substr(data.find("\r\n\r\n") + 4);
+                        std::vector<std::string> chunks = splitByStr(body,"\r\n");
+                        std::string ans;
+                        bool isEven = false;
+                        size_t size = 0;
+                        for(auto& chunk : chunks)
+                        {
+                            if(isEven)
+                            {
+                                ans += chunk;
+                            }
+
+                            isEven = !isEven;
+                        }
+
+                        m_rawBodyData = new byte[ans.length()];
+                        memcpy(m_rawBodyData, ans.c_str(), sizeof(byte) * ans.length());
+                    }
                 }
             }
 
+
+            return true;
         }
         catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\nException while parsing request";
         }
     }
+
+
+
+
+    /**
+     * @brief Construct a new HTTPRequest::HTTPRequest object
+     * 
+     * @param data raw data to parse and create HTTPRequest object
+     */
+    HTTPRequest::HTTPRequest(const std::string& data)
+    {
+        parseRequest(data);
+    }
+
+
 }

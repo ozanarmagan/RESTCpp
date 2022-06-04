@@ -87,7 +87,7 @@ namespace restcpp
         if(hasFoundPath && !hasFoundFile)
         {
             res->setStatus(404);
-            res->setBodyHTML("<html><pre>404 File Could Not Found</pre><br/><h6>RESTC++</html>");
+            res->setBodyHTML("<html><pre>404 File Could Not Found</pre><br/><h6>RESTC++</h6></html>");
         }
         return hasFoundPath;
     }
@@ -406,8 +406,21 @@ namespace restcpp
                 res->setStatus(408);
                 return res;
             }
-            auto req = std::make_shared<HTTPRequest>(rawData);
-            if(req->getMethod() == METHOD::HEAD)
+            auto req = std::make_shared<HTTPRequest>();
+            bool isValid = req->parseRequest(rawData);
+            if(!isValid)
+            {
+                res->setStatus(400);
+                res->setBodyHTML(getErrorHTML(400));
+                return res;
+            }
+            if(req->getHeader("Host") == "")
+            {
+                res->setStatus(400);
+                res->setBodyHTML(getErrorHTML(400));
+                return res;
+            }
+            if(req->getMethod() == METHOD::HEAD || req->getMethod() == METHOD::CONNECT)
                 res->setHeaderOnly(true);
             res->setHTTPVersion(req->getHTTPVersion());
             if(req->getMethod() == METHOD::OPTIONS)
@@ -417,11 +430,14 @@ namespace restcpp
             }
             
             h_processRouter(req,res,m_router);
+
+            lastRequest = req;
         }
         catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\n Exception on proccess request";
         }
+
         return res;
     }
 
@@ -435,7 +451,6 @@ namespace restcpp
     {
         try
         {
-
             h_sendToSocket(sock,response->serializeResponse());
 
             h_closeSocket(sock);

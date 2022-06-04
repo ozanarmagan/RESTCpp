@@ -19,7 +19,7 @@ namespace restcpp
      * 
      */
     enum class METHOD {
-        GET,POST,PUT,PATCH,DEL,HEAD,OPTIONS,INVALID
+        GET,POST,PUT,PATCH,DEL,HEAD,OPTIONS,CONNECT,TRACE,INVALID
     };
 
     /**
@@ -40,6 +40,14 @@ namespace restcpp
     };
 
     typedef uint64_t SOCKET;
+
+    enum class TRANSFER_ENCODING {
+        CHUNKED,IDENTITY,INVALID
+    };
+
+    enum class CONTENT_ENCODING {
+        GZIP,DEFLATE,INVALID
+    };
 
 
     /**
@@ -896,6 +904,150 @@ namespace restcpp
             }
         }
         return uuid;
+    }
+
+        inline std::string getErrorHTML(const int& errorCode)
+    {
+        std::string html = "<html><head><title>Error " + std::to_string(errorCode) + "</title></head><body><h1>Error " + std::to_string(errorCode) + "</h1><p>";
+        switch (errorCode)
+        {
+        case 400:
+            html += "Bad Request";
+            break;
+        case 401:
+            html += "Unauthorized";
+            break;
+        case 403:
+            html += "Forbidden";
+            break;
+        case 404:
+            html += "Not Found";
+            break;
+        case 405:
+            html += "Method Not Allowed";
+            break;
+        case 406:
+            html += "Not Acceptable";
+            break;
+        case 407:
+            html += "Proxy Authentication Required";
+            break;
+        case 408:
+            html += "Request Timeout";
+            break;
+        case 409:
+            html += "Conflict";
+            break;
+        case 410:
+            html += "Gone";
+            break;
+        case 411:
+            html += "Length Required";
+            break;
+        case 412:
+            html += "Precondition Failed";
+            break;
+        case 413:
+            html += "Request Entity Too Large";
+            break;
+        case 414:
+            html += "Request-URI Too Long";
+            break;
+        case 415:
+            html += "Unsupported Media Type";
+            break;
+        case 416:
+            html += "Requested Range Not Satisfiable";
+            break;
+        case 417:
+            html += "Expectation Failed";
+            break;
+        case 418:
+            html += "I'm a teapot";
+            break;
+        case 420:
+            html += "Enhance Your Calm";
+            break;
+        case 422:
+            html += "Unprocessable Entity";
+            break;
+        case 423:
+            html += "Locked";
+            break;
+        case 424:
+            html += "Method Failure";
+            break;
+        case 425:
+            html += "Unordered Collection";
+            break;
+        case 426:
+            html += "Upgrade Required";
+            break;
+        case 428:
+            html += "Precondition Required";
+            break;
+        case 429:
+            html += "Too Many Requests";
+            break;
+        case 431:
+            html += "Request Header Fields Too Large";
+            break;
+        case 444:
+            html += "No Response";
+            break;
+        case 449:
+            html += "Retry With";
+            break;
+        case 450:
+            html += "Blocked by Windows Parental Controls";
+            break;
+        case 451:
+            html += "Unavailable For Legal Reasons";
+            break;
+        case 500:
+            html += "Internal Server Error";
+            break;
+        case 501:
+            html += "Not Implemented";
+            break;
+        case 502:
+            html += "Bad Gateway";
+            break;
+        case 503:
+            html += "Service Unavailable";
+            break;
+        case 504:
+            html += "Gateway Timeout";
+            break;
+        case 505:
+            html += "HTTP Version Not Supported";
+            break;
+        case 506:
+            html += "Variant Also Negotiates";
+            break;
+        case 507:
+            html += "Insufficient Storage";
+            break;
+        case 508:
+            html += "Loop Detected";
+            break;
+        case 509:
+            html += "Bandwidth Limit Exceeded";
+            break;
+        case 510:
+            html += "Not Extended";
+            break;
+        case 511:
+            html += "Network Authentication Required";
+            break;
+        default:
+            html += "Unknown Error";
+            break;
+        }
+
+        html += "</p><h6>RESTC++</h6></body></html>";
+
+        return html;
     }
 
 }
