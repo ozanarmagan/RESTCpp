@@ -37,7 +37,7 @@ namespace restcpp
             const std::unordered_map<std::string,std::string>& getQueriesAll() const { return m_queries; }
             const std::unordered_map<std::string,std::string>& getParamsAll()  const { return m_pathParams; }
             const std::unordered_map<std::string,std::string>& getCookiesAll() const { return m_cookies; }
-            const std::string getHeader(const std::string& header) const { if(m_headers.count(header)) return m_headers.at(header); else return ""; }
+            const std::string getHeader(std::string header) const {  if( std::transform(header.begin(),header.end(),header.begin(), ::tolower);  m_headers.count(header)) return m_headers.at(header); else return ""; }
             const std::string getQuery(const std::string& query) const { if(m_queries.count(query)) return m_queries.at(query);  else return "";}
             const std::string getParam(const std::string& param) const { if(m_pathParams.count(param)) return m_pathParams.at(param); else return ""; }
             const std::vector<FormData> getFormData() const { return m_formData; }

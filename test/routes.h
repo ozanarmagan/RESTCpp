@@ -34,7 +34,7 @@ void testSetCookie(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 
 void proxyTest(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 {
-    res = restcpp::Proxy("google.com").getResponse();
+    res = restcpp::Proxy("www.w3.org").getResponse();
 }
 
 
@@ -47,7 +47,7 @@ void sessionTest(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 
         session->setData("viewCount",1);
 
-        std::cout << "Session EXPIRES: " << session->toCookie().getExpires() << std::endl;
+        session->setSecure(false);
 
         res.setBodyHTML("<html><body><h1>Session test</h1><p>Session ID: " + session->getSessionID() + "</p><p>View Count: " + std::to_string(session->getData<int>("viewCount")) + "</p><p>Expire Time: " + session->getExpiresStr() + "</p></body></html>");
 
@@ -101,3 +101,5 @@ void testFileUpload(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
     ss << "</body></html>";
     res.setBodyHTML(ss.str());
 }
+
+

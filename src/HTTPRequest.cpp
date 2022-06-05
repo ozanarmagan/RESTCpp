@@ -194,22 +194,23 @@ namespace restcpp
                     else
                     {
                         auto val = vec[i].substr(pos + 1, vec[i].length() - pos - 1);
+                        std::transform(key.begin(), key.end(), key.begin(), ::tolower);
                         m_headers[key] = val;
                     }
                 }
             }
 
-            if(m_headers["Content-Length"] != "")
-                for(const char& c : m_headers["Content-Length"])
+            if(m_headers["content-length"] != "")
+                for(const char& c : m_headers["content-length"])
                     if(c < '0' || c > '9')
                         return false;
 
-            if(m_headers["Content-Length"] != "")
+            if(m_headers["content-length"] != "")
             {
                 if(m_headers["Content-Type"].find("multipart/form-data") != std::string::npos)
                 {
                     std::string body = data.substr(data.find("\r\n\r\n") + 4);
-                    if(m_headers["Transfer-Encoding"] == "chunked")
+                    if(m_headers["transfer-encoding"] == "chunked")
                     {
                         std::string ans;
                         std::vector<std::string> chunks = splitByStr(body,"\r\n");
@@ -223,7 +224,7 @@ namespace restcpp
 
                         body = ans;
                     }
-                    std::string contentType = m_headers["Content-Type"];
+                    std::string contentType = m_headers["content-type"];
                     std::string boundary = contentType.substr(contentType.find("boundary=") + 9);
                     body = body.substr(body.find("--" + boundary));
                     std::vector<std::string> form = splitByStr(body,"--" + boundary);
@@ -265,10 +266,10 @@ namespace restcpp
                     }
                 }
 
-                else if(m_headers["Content-Type"].find("application/x-www-form-urlencoded") != std::string::npos)
+                else if(m_headers["content-type"].find("application/x-www-form-urlencoded") != std::string::npos)
                 {
                     std::string body = data.substr(data.find("\r\n\r\n") + 4);
-                    if(m_headers["Transfer-Encoding"] == "chunked")
+                    if(m_headers["transfer-encoding"] == "chunked")
                     {
                         std::string ans;
                         std::vector<std::string> chunks = splitByStr(body,"\r\n");
@@ -295,7 +296,7 @@ namespace restcpp
 
                 else
                 {
-                    if(m_headers["Transfer-Encoding"] != "chunked")
+                    if(m_headers["transfer-encoding"] != "chunked")
                     {
                         std::string body = data.substr(data.find("\r\n\r\n") + 4);
                         memccpy(m_rawBodyData, body.c_str(), 0, body.length());
@@ -329,7 +330,10 @@ namespace restcpp
         catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\nException while parsing request";
+            return false;
         }
+
+        return true;
     }
 
 

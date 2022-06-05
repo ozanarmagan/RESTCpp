@@ -18,7 +18,8 @@ namespace restcpp
         std::replace(timeStr.begin(),timeStr.end(),'\n','\0');
         timeStr = timeStr.substr(0, timeStr.find('\0'));
         res->addHeader("Date",timeStr);
-        res->addHeader("Connection","Close");
+        res->addHeader("Connection","Keep-Alive");
+        res->addHeader("Keep-Alive","timeout=5, max=100");
     }
 
     /**
@@ -71,6 +72,8 @@ namespace restcpp
         {
             if(path == key)
             {
+                if(fileName == "")
+                    fileName = "index.html";
                 std::ifstream file(value + fileName);
                 bool checkFile = file.is_open();
                 file.close();
@@ -88,6 +91,7 @@ namespace restcpp
         {
             res->setStatus(404);
             res->setBodyHTML("<html><pre>404 File Could Not Found</pre><br/><h6>RESTC++</h6></html>");
+            res->addHeader("Connection","close");
         }
         return hasFoundPath;
     }
@@ -168,6 +172,7 @@ namespace restcpp
         if(!h_searchDefinedRoutes(req, res, URLPath + fileName, router))
         {
             res->setStatus(404);
+            res->addHeader("Connection","close");
             res->setBodyHTML("<html><pre>Invalid "+ gMethodToStr(req->getMethod())  + " request to " + URLPath + "</pre><br/><h6>RESTC++</html>");
         }
 
@@ -336,8 +341,14 @@ namespace restcpp
             while(1)
             {
 #ifdef _WIN32
+                DWORD timeout = 5 * 1000;
+                setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
                 if((recieveLength = recv(socket,buffer,8192, 0)) == SOCKET_ERROR)
 #else
+                struct timeval timeout;
+                timeout.tv_sec = SOCKET_READ_TIMEOUT_SEC;
+                timeout.tv_usec = 0;
+                setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
                 if((recieveLength = recv(socket,buffer,8192, 0)) < 0)
 #endif
                 {
@@ -404,6 +415,7 @@ namespace restcpp
             if(rawData == "HTTPFAIL")
             {
                 res->setStatus(408);
+                res->addHeader("Connection","close");
                 return res;
             }
             auto req = std::make_shared<HTTPRequest>();
@@ -411,12 +423,14 @@ namespace restcpp
             if(!isValid)
             {
                 res->setStatus(400);
+                res->addHeader("Connection","close");
                 res->setBodyHTML(getErrorHTML(400));
                 return res;
             }
             if(req->getHeader("Host") == "")
             {
                 res->setStatus(400);
+                res->addHeader("Connection","close");
                 res->setBodyHTML(getErrorHTML(400));
                 return res;
             }
@@ -452,8 +466,10 @@ namespace restcpp
         try
         {
             h_sendToSocket(sock,response->serializeResponse());
-
-            h_closeSocket(sock);
+            if(response->getStatusCode() >= 400)   
+                h_closeSocket(sock);
+            else
+                recieveNext(sock);
         }
         catch (std::runtime_error ex)
         {

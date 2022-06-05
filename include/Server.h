@@ -60,7 +60,7 @@ namespace restcpp
             Router m_router;
             void init();
             void onRequest(SOCKET socket);
-            const std::string recieveNext(SOCKET socket);
+            static const std::string recieveNext(SOCKET socket);
             std::shared_ptr<HTTPResponse> processRequest(const std::string& rawData);
             std::shared_ptr<HTTPRequest> lastRequest;
             std::string certFile,pemFile;

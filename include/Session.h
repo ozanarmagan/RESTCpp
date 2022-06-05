@@ -30,6 +30,11 @@ namespace restcpp
             const std::any getData(const std::string& key) const { auto val = m_data.find(key); if(val != m_data.end()) return val->second; else return std::any(); };
             template <typename T> T getData(const std::string& key) const { auto val = m_data.find(key); if(val != m_data.end()) return std::any_cast<T>(val->second); else return T(); };
             void setData(const std::string& key, const std::any& value) { m_data[key] = value; };
+            void setPath(const std::string& path) { m_path = path; };
+            void setDomain(const std::string& domain) { m_domain = domain; };
+            void setSecure(const bool& secure) { m_secure = secure; };
+            void setHttpOnly(const bool& httpOnly) { m_httpOnly = httpOnly; };
+            void setExpireTime(const time_t& expireTime) { m_expireTime = expireTime; };
             const Cookie toCookie() const;
         private:
             std::string m_sessionID;
@@ -49,7 +54,7 @@ namespace restcpp
 
     inline const Cookie Session::toCookie() const
     {
-        return Cookie("sessionid", m_sessionID, m_path, m_domain, m_secure, m_httpOnly);
+        return Cookie("sessionid", m_sessionID, m_path, m_domain, m_expireTime, m_secure, m_httpOnly);
     }
 
     
