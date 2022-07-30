@@ -17,6 +17,7 @@ int main()
     server.addRoute("/sessiontest/", restcpp::METHOD::GET, sessionTest);
     server.addRoute("/querytest/", restcpp::METHOD::GET, testQuery);
     server.addRoute("/fileupload/", restcpp::METHOD::POST, testFileUpload);
+    server.addRoute("/fileform/", restcpp::METHOD::GET, testFileUploadForm);
     server.run();
 
 }

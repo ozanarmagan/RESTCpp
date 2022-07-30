@@ -290,7 +290,7 @@ namespace restcpp
             if((m_acceptSocket = accept(m_sock,0,0)) < 0)
 #endif
             {
-                //std::cout << "Error while initilazing accept socket\n";
+                std::cout << "Error while initilazing accept socket\n";
                 continue;
             }
         
@@ -346,7 +346,7 @@ namespace restcpp
                 if((recieveLength = recv(socket,buffer,8192, 0)) == SOCKET_ERROR)
 #else
                 struct timeval timeout;
-                timeout.tv_sec = SOCKET_READ_TIMEOUT_SEC;
+                timeout.tv_sec = 5;
                 timeout.tv_usec = 0;
                 setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
                 if((recieveLength = recv(socket,buffer,8192, 0)) < 0)
@@ -354,7 +354,7 @@ namespace restcpp
                 {
                     //std::cout << "Error while receiving data from socket\n";
 #ifdef _WIN32
-                    //std::cout << WSAGetLastError() << std::endl;
+                    std::cout << WSAGetLastError() << std::endl;
 #endif
                     return "HTTPFAIL";
                 }
@@ -414,6 +414,7 @@ namespace restcpp
             h_setMainHeaders(res);
             if(rawData == "HTTPFAIL")
             {
+                std::cout << "HTTPFAIL\n";
                 res->setStatus(408);
                 res->addHeader("Connection","close");
                 return res;
@@ -422,6 +423,7 @@ namespace restcpp
             bool isValid = req->parseRequest(rawData);
             if(!isValid)
             {
+                std::cout << "Invalid request\n";
                 res->setStatus(400);
                 res->addHeader("Connection","close");
                 res->setBodyHTML(getErrorHTML(400));
@@ -429,6 +431,7 @@ namespace restcpp
             }
             if(req->getHeader("Host") == "")
             {
+                std::cout << "Host header not found\n";
                 res->setStatus(400);
                 res->addHeader("Connection","close");
                 res->setBodyHTML(getErrorHTML(400));

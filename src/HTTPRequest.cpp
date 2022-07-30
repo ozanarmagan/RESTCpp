@@ -201,13 +201,22 @@ namespace restcpp
             }
 
             if(m_headers["content-length"] != "")
-                for(const char& c : m_headers["content-length"])
-                    if(c < '0' || c > '9')
+            {
+                bool intFound = false;
+                for(auto& c : m_headers["content-length"])
+                {
+                    if(c >= '0' && c <= '9')
+                        intFound = true;
+                    else if(c != ' ' || (c == ' ' && intFound))
                         return false;
+                }   
+                if(!intFound)
+                    return false;
+            }
 
             if(m_headers["content-length"] != "")
             {
-                if(m_headers["Content-Type"].find("multipart/form-data") != std::string::npos)
+                if(m_headers["content-type"].find("multipart/form-data") != std::string::npos)
                 {
                     std::string body = data.substr(data.find("\r\n\r\n") + 4);
                     if(m_headers["transfer-encoding"] == "chunked")

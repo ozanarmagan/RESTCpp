@@ -81,7 +81,7 @@ void testFileUpload(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 {
     std::stringstream ss;
     ss << "<html><body><h1>File upload test</h1>";
-    std::cout << "File upload test" << std::endl;
+    ss << "<h3>Uploaded File:</h3>";
     for(auto& formData : req.getFormData())
     {
         if(formData.isBinary())
@@ -102,4 +102,9 @@ void testFileUpload(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
     res.setBodyHTML(ss.str());
 }
 
+
+void testFileUploadForm(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
+{
+    res.setBodyHTML("<html><body><h1>File upload form</h1><form action=\"/fileupload/\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"file\" name=\"file\" /><input type=\"submit\" value=\"Upload\" /></form></body></html>");
+}
 
