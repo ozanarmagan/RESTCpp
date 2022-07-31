@@ -46,7 +46,6 @@ namespace restcpp
         while ( read(m_socket, &cur, 1) > 0 ) {
 #endif
 			buff[8191] = '\0';
-			std::cout << recvd << std::endl;
 			if(recvd == 0)
 				break;
         	res += std::string(buff);
@@ -68,7 +67,9 @@ namespace restcpp
         m_response.addHeader("Date",timeStr);
         m_response.addHeader("Connection","Close");
 		m_response.setBodyText(res.substr(res.find("\r\n\r\n") + 4));
-		auto contentTypePos = res.find("Content-Type");
+		auto contentTypePos = res.find("content-type");
+		if(contentTypePos == std::string::npos)
+			contentTypePos = res.find("Content-Type");
 		if(contentTypePos != std::string::npos)
 		{
 			contentTypePos += 14;

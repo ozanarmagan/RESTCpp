@@ -315,11 +315,18 @@ namespace restcpp
      */
     void Server::onRequest(SOCKET socket)
     {
-        const std::string reqData = recieveNext(m_acceptSocket);
-        if(reqData == "")
-            return;
-        auto res = processRequest(reqData);
-        sendResponse(res,socket);
+        while(1)
+        {
+            const std::string reqData = recieveNext(socket);
+            if(reqData == "" || reqData == "HTTPFAIL")
+            {
+                h_closeSocket(socket);
+                return;
+            }
+            auto res = processRequest(reqData);
+            sendResponse(res,socket);
+            
+        }
     }
 
     /**
@@ -331,25 +338,24 @@ namespace restcpp
     const std::string Server::recieveNext(SOCKET socket)
     {
         std::string rawData;
-        char buffer[8192];
+        char buffer[32 * 1024];
         uint8_t attempts = 0;
         try
         {
             int64_t recieveLength = 0,totalRecieved = 0; 
             int64_t recieveLengthBeforeBody = -1;
             int contentLength = 0;
+            bool isChunked = false;
             while(1)
             {
 #ifdef _WIN32
-                DWORD timeout = 5 * 1000;
-                setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
-                if((recieveLength = recv(socket,buffer,8192, 0)) == SOCKET_ERROR)
+                if((recieveLength = recv(socket,buffer,32 * 1024, 0)) == SOCKET_ERROR)
 #else
                 struct timeval timeout;
                 timeout.tv_sec = 5;
                 timeout.tv_usec = 0;
                 setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-                if((recieveLength = recv(socket,buffer,8192, 0)) < 0)
+                if((recieveLength = recv(socket,buffer,32 * 1024, 0)) < 0)
 #endif
                 {
                     //std::cout << "Error while receiving data from socket\n";
@@ -361,40 +367,52 @@ namespace restcpp
 
 
 
+
+                
+
                 if(recieveLength == 0)
                     break;
-                
-                totalRecieved += recieveLength; 
+
+
+                totalRecieved += recieveLength;
+
                 rawData += std::string(buffer,recieveLength);
-
-                if(totalRecieved > 32)
+                // check if we have recieved all headers
+                if(recieveLengthBeforeBody == -1 && rawData.find("\r\n\r\n") != std::string::npos)
                 {
-                    if(rawData.find("Content-Length") == std::string::npos && contentLength == 0)
-                        break;
+                    
+                    recieveLengthBeforeBody = rawData.find("\r\n\r\n") + 2;
+                    
+                    // check if we have content length
+                    if(rawData.find("Content-Length: ") != std::string::npos)
+                        contentLength = std::stoi(rawData.substr(rawData.find("Content-Length: ") + 16,rawData.find("\r\n",rawData.find("Content-Length: ")) - rawData.find("Content-Length: ") - 16));
+                    else if(rawData.find("content-length: ") != std::string::npos)
+                        contentLength = std::stoi(rawData.substr(rawData.find("content-length: ") + 16,rawData.find("\r\n",rawData.find("content-length: ")) - rawData.find("content-length: ") - 16));
+                    // check if we have chunked encoding
+                    else if(rawData.find("Transfer-Encoding: chunked") != std::string::npos || rawData.find("transfer-encoding: chunked") != std::string::npos)
+                        isChunked = true;
                     else
-                    {
-                        if(contentLength == 0)
-                        {
-                            auto pos = rawData.find("Content-Length:");
-                            auto lengthStr = rawData.substr(pos + 16, rawData.find_first_of("\r",pos) - pos - 16);
-                            contentLength = std::stoi(lengthStr);
-                        }
-                        if(rawData.find("\r\n\r\n") != std::string::npos && recieveLengthBeforeBody == -1)
-                        {
-                            recieveLengthBeforeBody = rawData.find("\r\n\r\n") + 4;
-                        }
-
-                        if(totalRecieved >= contentLength + recieveLengthBeforeBody)
-                            break;
-                    }
+                        break;
+                    
                 }
+
+                
+
+
+                if(!isChunked && recieveLengthBeforeBody != -1 && totalRecieved >= recieveLengthBeforeBody + contentLength)
+                    break;
+                else if(isChunked && rawData.find("\r\n0\r\n\r\n") != std::string::npos)
+                    break;
+
+
             }
         }
         catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\n Exception on recieve";
         }
-        
+
+
         return rawData;
     }
 
@@ -407,6 +425,8 @@ namespace restcpp
      */
     std::shared_ptr<HTTPResponse> Server::processRequest(const std::string& rawData)
     {   
+
+        
 
         auto res = std::make_shared<HTTPResponse>();
         try
@@ -469,10 +489,6 @@ namespace restcpp
         try
         {
             h_sendToSocket(sock,response->serializeResponse());
-            if(response->getStatusCode() >= 400)   
-                h_closeSocket(sock);
-            else
-                recieveNext(sock);
         }
         catch (std::runtime_error ex)
         {

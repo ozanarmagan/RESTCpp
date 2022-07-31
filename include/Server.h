@@ -60,11 +60,11 @@ namespace restcpp
             Router m_router;
             void init();
             void onRequest(SOCKET socket);
-            static const std::string recieveNext(SOCKET socket);
+            const std::string recieveNext(SOCKET socket);
             std::shared_ptr<HTTPResponse> processRequest(const std::string& rawData);
             std::shared_ptr<HTTPRequest> lastRequest;
             std::string certFile,pemFile;
-            static void sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock);
+            void sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock);
             static void h_setMainHeaders(std::shared_ptr<HTTPResponse> res);
             static void h_setOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Router& router);
             static bool h_searchStaticRoutes(std::shared_ptr<HTTPResponse> res, std::string path,std::string fileName,Router& router);
