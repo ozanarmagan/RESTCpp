@@ -294,12 +294,6 @@ namespace restcpp
                 continue;
             }
         
-#ifndef _WIN32
-            struct timeval timeout;
-            timeout.tv_sec = 5;
-            timeout.tv_usec = 0;
-            setsockopt(m_acceptSocket, SOL_SOCKET, SO_RCVTIMEO,&timeout,sizeof(timeout));
-#endif
 
             //fOnRequest(m_acceptSocket);
             auto res = tPool.enqueue(std::bind(&Server::onRequest,this,m_acceptSocket));
@@ -325,7 +319,7 @@ namespace restcpp
             }
             auto res = processRequest(reqData);
             sendResponse(res,socket);
-            
+
         }
     }
 
@@ -351,10 +345,6 @@ namespace restcpp
 #ifdef _WIN32
                 if((recieveLength = recv(socket,buffer,32 * 1024, 0)) == SOCKET_ERROR)
 #else
-                struct timeval timeout;
-                timeout.tv_sec = 5;
-                timeout.tv_usec = 0;
-                setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
                 if((recieveLength = recv(socket,buffer,32 * 1024, 0)) < 0)
 #endif
                 {

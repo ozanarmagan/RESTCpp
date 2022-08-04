@@ -128,7 +128,7 @@ namespace restcpp
         {
             auto MIME = gMIMETable.at(fileName.substr(fileName.find_last_of('.') + 1));
             m_headers["Content-Type"] = " " + MIME;
-            std::ifstream file(fileName);
+            std::ifstream file(fileName, std::ios::binary);
 
             if(file.good())
             {
