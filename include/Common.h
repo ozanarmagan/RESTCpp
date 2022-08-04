@@ -540,6 +540,7 @@ namespace restcpp
         {"mp3","audio/x-mpeg-3"},
         {"mp3","video/mpeg"},
         {"mp3","video/x-mpeg"},
+        {"mp4","video/mp4"},
         {"mpa","audio/mpeg"},
         {"mpa","video/mpeg"},
         {"mpc","application/x-project"},
