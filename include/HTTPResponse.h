@@ -39,6 +39,7 @@ namespace restcpp
             void setHeaderOnly(bool val) { m_headerOnly = val; };
             void setContentType(const std::string& contentType) { m_headers["Content-Type"] = contentType; };
             void deleteCookie(const std::string& name) { m_cookies.erase(name); };
+            void redirect(const std::string& url, const short& statusCode = 302) { m_headers["Location"] = url; m_statusCode = statusCode; };
             const HTTP_VERSION getHTTPVersion() const { return m_requestVersion; };
             const short getStatusCode() const { return m_statusCode; }; 
             const std::unordered_map<std::string,std::string> getHeaders() const { return m_headers; };

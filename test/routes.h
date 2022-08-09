@@ -30,6 +30,7 @@ void testParams(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 void testSetCookie(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 {
     res.addCookie({"test","test"});
+    res.setBodyJSON("{\"message\":\"Cookie set\"}");
 }
 
 void proxyTest(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
@@ -106,5 +107,11 @@ void testFileUpload(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 void testFileUploadForm(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
 {
     res.setBodyHTML("<html><body><h1>File upload form</h1><form action=\"/fileupload/\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"file\" name=\"file\" /><input type=\"submit\" value=\"Upload\" /></form></body></html>");
+}
+
+
+void testRedirect(const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res)
+{
+    res.redirect("/greeting/Ozan/Armagan");
 }
 

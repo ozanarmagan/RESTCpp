@@ -73,7 +73,9 @@ namespace restcpp
             if(m_requestBody.length() > 0)
                 res += "Content-Length: " + std::to_string(m_requestBody.length());
             if(m_requestBody.length() > 0 && !m_headerOnly)
-            res += std::string("\r\n\r\n") +  m_requestBody;
+                res += std::string("\r\n\r\n") +  m_requestBody;
+            else if(m_headerOnly || m_requestBody.length() == 0)
+                res += "\r\n";
         }
         catch (std::runtime_error ex)
         {

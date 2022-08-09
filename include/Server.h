@@ -42,11 +42,11 @@ namespace restcpp
             Server(const uint16_t& port = 8080) : m_port(port),m_router() { init(); };
             Server(const std::string& certFilePath, const std::string& pemFilePath, const uint16_t& port = 8080){   };
 
-            void addStaticRoute(std::string URLPath, std::string folderPath) {
+            void serveStatic(std::string URLPath, std::string folderPath) {
                  m_router.m_staticRoutes[URLPath] = folderPath;
                  for(const auto& p : std::filesystem::directory_iterator(folderPath))
                     if(p.is_directory())
-                        addStaticRoute(URLPath + p.path().filename().string() + "/", p.path().string() + "/");
+                        serveStatic(URLPath + p.path().filename().string() + "/", p.path().string() + "/");
              };
             void run();
             void stop();
