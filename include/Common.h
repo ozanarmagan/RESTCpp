@@ -12,7 +12,7 @@ namespace restcpp
      * @brief Thread count to be used for thread pool by server
      * 
      */
-    static constexpr int THREAD_COUNT = 3;
+    static constexpr int THREAD_COUNT = 12;
 
     /**
      * @brief HTTP method types

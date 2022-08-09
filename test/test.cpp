@@ -9,15 +9,15 @@ int main()
     restcpp::Server server(6005);
     server.addStaticRoute("/","./root/");
 
-    //server.addRoute("/products/", restcpp::METHOD::GET, getProducts);
-    server.addRoute("/greeting/{name}/{surname}", restcpp::METHOD::GET, testParams);
-    server.addRoute("/greeting2/",restcpp::METHOD::GET,[](const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res) { res.setBodyText("Greetings!"); });
-    server.addRoute("/proxytest/", restcpp::METHOD::GET, proxyTest);
-    server.addRoute("/cookietest/", restcpp::METHOD::GET, testSetCookie);
-    server.addRoute("/sessiontest/", restcpp::METHOD::GET, sessionTest);
-    server.addRoute("/querytest/", restcpp::METHOD::GET, testQuery);
-    server.addRoute("/fileupload/", restcpp::METHOD::POST, testFileUpload);
-    server.addRoute("/fileform/", restcpp::METHOD::GET, testFileUploadForm);
+    server.get("/greeting/{name}/{surname}", [](const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res) {res.setBodyText("Greetings, Mr./Mrs. " + req.getParam("name") +  " " + req.getParam("surname"));})
+          .get("/proxytest/", [](const restcpp::HTTPRequest& req, restcpp::HTTPResponse& res) {res = restcpp::Proxy("www.w3.org").getResponse();})
+          .get("/cookietest/", testSetCookie)
+          .get("/sessiontest/",  sessionTest)
+          .get("/querytest/",  testQuery)
+          .post("/fileupload/",  testFileUpload)
+          .get("/fileform/",  testFileUploadForm);
+
+
     server.run();
 
 }

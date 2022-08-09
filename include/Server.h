@@ -41,7 +41,7 @@ namespace restcpp
         public:
             Server(const uint16_t& port = 8080) : m_port(port),m_router() { init(); };
             Server(const std::string& certFilePath, const std::string& pemFilePath, const uint16_t& port = 8080){   };
-            void addRoute(const std::string& URLPath, const METHOD& method, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { m_router.m_routes.push_back(Router::route(URLPath, method, callBack)); };
+
             void addStaticRoute(std::string URLPath, std::string folderPath) {
                  m_router.m_staticRoutes[URLPath] = folderPath;
                  for(const auto& p : std::filesystem::directory_iterator(folderPath))
@@ -51,6 +51,11 @@ namespace restcpp
             void run();
             void stop();
             void setLogging(bool value) { m_log = value; };
+            Server& get(const std::string& URLPath, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { addRoute(URLPath, METHOD::GET, callBack); return *this; };
+            Server& post(const std::string& URLPath, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { addRoute(URLPath, METHOD::POST, callBack); return *this; };
+            Server& put(const std::string& URLPath, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { addRoute(URLPath, METHOD::PUT, callBack); return *this; };
+            Server& del(const std::string& URLPath, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { addRoute(URLPath, METHOD::DEL, callBack); return *this; };
+            Server& patch(const std::string& URLPath, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { addRoute(URLPath, METHOD::PATCH, callBack); return *this; };
         private:
             SOCKET m_sock,m_acceptSocket;
             sockaddr_in m_serverAddr;
@@ -60,6 +65,7 @@ namespace restcpp
             Router m_router;
             void init();
             void onRequest(SOCKET socket);
+            void addRoute(const std::string& URLPath, const METHOD& method, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { m_router.m_routes.push_back(Router::route(URLPath, method, callBack)); };
             const std::string recieveNext(SOCKET socket);
             std::shared_ptr<HTTPResponse> processRequest(const std::string& rawData);
             std::shared_ptr<HTTPRequest> lastRequest;
