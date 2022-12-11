@@ -233,9 +233,7 @@ namespace restcpp
      */
     void Server::init()
     {
-        std::cout << m_cert << " " << m_pem << std::endl;
-
-        if(m_cert != "" && m_pem != "")
+        if(m_cert != "" && m_key != "")
         {
             h_createSSLContext();
             if(m_ctx)
@@ -546,7 +544,7 @@ namespace restcpp
 
             abort();
         }
-        if(SSL_CTX_use_PrivateKey_file(m_ctx, m_pem.c_str(), SSL_FILETYPE_PEM) <= 0 )
+        if(SSL_CTX_use_PrivateKey_file(m_ctx, m_key.c_str(), SSL_FILETYPE_PEM) <= 0 )
         {
             ERR_print_errors_fp(stdout);
             abort();

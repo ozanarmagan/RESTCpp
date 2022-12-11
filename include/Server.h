@@ -43,7 +43,7 @@ namespace restcpp
     {
         public:
             Server(const uint16_t& port = 8080) : m_port(port),m_router() { init(); };
-            Server(const std::string& certFilePath, const std::string& pemFilePath, const uint16_t& port = 8080) : m_port(port),m_router() { m_https = true; m_cert = certFilePath; m_pem = pemFilePath; init(); };
+            Server(const std::string& certFilePath, const std::string& keyFilePath, const uint16_t& port = 8080) : m_port(port),m_router() { m_https = true; m_cert = certFilePath; m_key = keyFilePath; init(); };
 
             void serveStatic(std::string URLPath, std::string folderPath) {
                  m_router.m_staticRoutes[URLPath] = folderPath;
@@ -65,7 +65,7 @@ namespace restcpp
             bool m_log; 
             bool m_https;
             std::string m_cert;
-            std::string m_pem;
+            std::string m_key;
             // SSL Context
             SSL_CTX* m_ctx;
             uint16_t m_port;
