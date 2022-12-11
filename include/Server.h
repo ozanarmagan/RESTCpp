@@ -22,6 +22,9 @@
 #include <cstring>
 #include <filesystem>
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 #include "Common.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
@@ -40,7 +43,7 @@ namespace restcpp
     {
         public:
             Server(const uint16_t& port = 8080) : m_port(port),m_router() { init(); };
-            Server(const std::string& certFilePath, const std::string& pemFilePath, const uint16_t& port = 8080){   };
+            Server(const std::string& certFilePath, const std::string& pemFilePath, const uint16_t& port = 8080) : m_port(port),m_router() { m_https = true; m_cert = certFilePath; m_pem = pemFilePath; init(); };
 
             void serveStatic(std::string URLPath, std::string folderPath) {
                  m_router.m_staticRoutes[URLPath] = folderPath;
@@ -61,16 +64,19 @@ namespace restcpp
             sockaddr_in m_serverAddr;
             bool m_log; 
             bool m_https;
+            std::string m_cert;
+            std::string m_pem;
+            // SSL Context
+            SSL_CTX* m_ctx;
             uint16_t m_port;
             Router m_router;
             void init();
             void onRequest(SOCKET socket);
             void addRoute(const std::string& URLPath, const METHOD& method, const std::function<void(const HTTPRequest&,HTTPResponse&)>& callBack) { m_router.m_routes.push_back(Router::route(URLPath, method, callBack)); };
-            const std::string recieveNext(SOCKET socket);
+            const std::string recieveNext(SOCKET socket, SSL*& ssl);
             std::shared_ptr<HTTPResponse> processRequest(const std::string& rawData);
             std::shared_ptr<HTTPRequest> lastRequest;
-            std::string certFile,pemFile;
-            void sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock);
+            void sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock, SSL* ssl = nullptr);
             static void h_setMainHeaders(std::shared_ptr<HTTPResponse> res);
             static void h_setOptions(std::shared_ptr<HTTPRequest> req, std::shared_ptr<HTTPResponse> res,Router& router);
             static bool h_searchStaticRoutes(std::shared_ptr<HTTPResponse> res, std::string path,std::string fileName,Router& router);
@@ -78,7 +84,8 @@ namespace restcpp
             static void h_processRouter(const std::shared_ptr<HTTPRequest>& req, const std::shared_ptr<HTTPResponse>& res, Router& router);
             static void h_closeSocket(const SOCKET& sock);
             static void h_sendToSocket(const SOCKET& sock,const std::string& message);
-
+            void h_createSSLContext();
+            void h_configureSSLContext();
     };
 
 }

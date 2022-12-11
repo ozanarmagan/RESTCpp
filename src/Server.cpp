@@ -233,6 +233,14 @@ namespace restcpp
      */
     void Server::init()
     {
+        std::cout << m_cert << " " << m_pem << std::endl;
+
+        if(m_cert != "" && m_pem != "")
+        {
+            h_createSSLContext();
+            if(m_ctx)
+                h_configureSSLContext();
+        }
 
 #ifdef _WIN32
         WSADATA wsaData;
@@ -311,15 +319,31 @@ namespace restcpp
     {
         while(1)
         {
-            const std::string reqData = recieveNext(socket);
+            SSL* ssl = nullptr;
+            if(m_ctx)
+            {
+                ssl = SSL_new(m_ctx);
+                SSL_set_fd(ssl,socket);
+                if(SSL_accept(ssl) <= 0)
+                {
+                    std::cout << "Error while accepting SSL connection\n";
+                    // log error
+                    std::cout << ERR_error_string(ERR_get_error(),NULL) << std::endl;
+                }
+            }
+            const std::string reqData = recieveNext(socket, ssl);
             if(reqData == "" || reqData == "HTTPFAIL")
             {
                 h_closeSocket(socket);
+                if (ssl)
+                {
+                    SSL_shutdown(ssl);
+                    SSL_free(ssl);
+                }
                 return;
             }
             auto res = processRequest(reqData);
-            sendResponse(res,socket);
-
+            sendResponse(res,socket,ssl);
         }
     }
 
@@ -329,7 +353,7 @@ namespace restcpp
      * @param socket to listen
      * @return const std::string raw request as std::string
      */
-    const std::string Server::recieveNext(SOCKET socket)
+    const std::string Server::recieveNext(SOCKET socket, SSL*& ssl)
     {
         std::string rawData;
         char buffer[32 * 1024];
@@ -342,23 +366,30 @@ namespace restcpp
             bool isChunked = false;
             while(1)
             {
-#ifdef _WIN32
-                if((recieveLength = recv(socket,buffer,32 * 1024, 0)) == SOCKET_ERROR)
-#else
-                if((recieveLength = recv(socket,buffer,32 * 1024, 0)) < 0)
-#endif
+                if(ssl)
                 {
-                    //std::cout << "Error while receiving data from socket\n";
-#ifdef _WIN32
-                    std::cout << WSAGetLastError() << std::endl;
-#endif
-                    return "HTTPFAIL";
+                    if((recieveLength = SSL_read(ssl,buffer,32 * 1024)) <= 0)
+                    {
+                        std::cout << "Error while receiving data from socket\n";
+                        return "HTTPFAIL";
+                    }
                 }
+                else
+                {
+#ifdef _WIN32
+                    if((recieveLength = recv(socket,buffer,32 * 1024, 0)) == SOCKET_ERROR)
+#else
+                    if((recieveLength = recv(socket,buffer,32 * 1024, 0)) < 0)
+#endif
+                    {
+                        //std::cout << "Error while receiving data from socket\n";
+#ifdef _WIN32
+                        std::cout << WSAGetLastError() << std::endl;
+#endif
+                        return "HTTPFAIL";
+                    }
 
-
-
-
-                
+                }
 
                 if(recieveLength == 0)
                     break;
@@ -387,8 +418,6 @@ namespace restcpp
                 }
 
                 
-
-
                 if(!isChunked && recieveLengthBeforeBody != -1 && totalRecieved >= recieveLengthBeforeBody + contentLength)
                     break;
                 else if(isChunked && rawData.find("\r\n0\r\n\r\n") != std::string::npos)
@@ -474,16 +503,56 @@ namespace restcpp
      * @param response 
      * @param sock 
      */
-    void Server::sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock)
+    void Server::sendResponse(std::shared_ptr<HTTPResponse>& response,const SOCKET& sock,SSL* ssl)
     {
         try
         {
-            h_sendToSocket(sock,response->serializeResponse());
+            if(ssl != nullptr)
+            {
+                SSL_write(ssl,response->serializeResponse().c_str(),response->serializeResponse().length());
+            }
+            else
+            {
+                h_sendToSocket(sock,response->serializeResponse());
+            }
         }
         catch (std::runtime_error ex)
         {
             std::cout << ex.what() << "\n Exception on send response";
         }
+    }
+
+    void Server::h_createSSLContext()
+    {
+        SSL_library_init();
+        OpenSSL_add_all_algorithms();
+        SSL_load_error_strings();
+        m_ctx = SSL_CTX_new(TLS_server_method());
+        if(m_ctx == NULL)
+        {
+            ERR_print_errors_fp(stdout);
+            abort();
+        }
+
+        std::cout << "SSL context created\n";
+    }
+
+    void Server::h_configureSSLContext()
+    {
+        SSL_CTX_set_ecdh_auto(m_ctx, 1);
+        if(SSL_CTX_use_certificate_file(m_ctx, m_cert.c_str(), SSL_FILETYPE_PEM) <= 0)
+        {
+            ERR_print_errors_fp(stdout);
+
+            abort();
+        }
+        if(SSL_CTX_use_PrivateKey_file(m_ctx, m_pem.c_str(), SSL_FILETYPE_PEM) <= 0 )
+        {
+            ERR_print_errors_fp(stdout);
+            abort();
+        }
+
+        std::cout << "SSL context configured\n";
     }
 
 

@@ -6,9 +6,9 @@ OBJ = $(SRC:.cc=.o)
 EXEC = restcpp
 
 ifeq ($(OS),Windows_NT) 
-	LBLIBS = -lwsock32 -lstdc++fs
+	LBLIBS = -lwsock32 -lstdc++fs -lssl -lcrypto
 else
-	LBLIBS = -pthread
+	LBLIBS = -pthread -lssl -lcrypto
 endif
 
 
