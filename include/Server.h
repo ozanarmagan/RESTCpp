@@ -42,7 +42,7 @@ namespace restcpp
     class Server
     {
         public:
-            Server(const uint16_t& port = 8080) : m_port(port),m_router() { init(); };
+            Server(const uint16_t& port = 8080) : m_port(port),m_router(),m_ctx(nullptr) { init(); };
             Server(const std::string& certFilePath, const std::string& keyFilePath, const uint16_t& port = 8080) : m_port(port),m_router() { m_https = true; m_cert = certFilePath; m_key = keyFilePath; init(); };
 
             void serveStatic(std::string URLPath, std::string folderPath) {
