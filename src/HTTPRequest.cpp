@@ -308,6 +308,7 @@ namespace restcpp
                     if(m_headers["transfer-encoding"] != "chunked")
                     {
                         std::string body = data.substr(data.find("\r\n\r\n") + 4);
+                        m_rawBodyData = new byte[body.length()];
                         memccpy(m_rawBodyData, body.c_str(), 0, body.length());
                     }
                     else
