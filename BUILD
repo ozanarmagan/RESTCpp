@@ -12,3 +12,10 @@ cc_library(
         "@platforms//os:windows": ["-lwsock32", "-lstdc++fs"]
     })
 )
+
+
+cc_binary(
+    name = "restcpp_test",
+    srcs = ["test/test.cpp", "test/routes.h"],
+    deps = [":restcpp"],
+)
